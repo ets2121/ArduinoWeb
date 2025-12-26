@@ -8,25 +8,82 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useCli } from '@/hooks/use-cli';
+import { useState } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Skeleton } from '../ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
-const boards = [
-  { name: 'Arduino Uno', category: 'Arduino AVR Boards' },
-  { name: 'Arduino Mega 2560', category: 'Arduino AVR Boards' },
-  { name: 'Arduino Nano', category: 'Arduino AVR Boards' },
-  { name: 'Arduino Zero', category: 'Arduino SAMD Boards' },
-  { name: 'Arduino MKR WiFi 1010', category: 'Arduino SAMD Boards' },
-];
+interface Core {
+  id: string;
+  name: string;
+  version: string;
+  latest: string;
+}
 
-const installedCores = [
-  { name: 'Arduino AVR Boards', version: '1.8.6' },
-  { name: 'Arduino SAMD Boards (32-bits ARM Cortex-M0+)', version: '1.8.13' },
-];
+interface InstalledCore {
+  ID: string;
+  Version: string;
+  Name: string;
+}
 
 export function BoardManagerDialog({ children }: { children: React.ReactNode }) {
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const { data: searchResults, error: searchError, isLoading: isSearching } = useCli<{ cores: Core[] }>(
+    searchTerm ? ['core', 'search', searchTerm, '--format', 'json'] : null
+  );
+  
+  const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<{ result: { name: string, version: string }[] }>(
+    ['core', 'list', '--format', 'json'],
+    { revalidateOnFocus: true }
+  );
+
+  const handleInstall = async (coreId: string) => {
+    toast({ title: `Installing ${coreId}...`, description: 'This may take a moment.' });
+    try {
+      const response = await fetch(`/api/cli/core/install/${coreId}`);
+      if (!response.ok) throw new Error('Installation failed');
+      const result = await response.text();
+      toast({ title: 'Installation Complete', description: result });
+      refreshInstalled();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
+  const handleRemove = async (coreId: string) => {
+    toast({ title: `Removing ${coreId}...` });
+    try {
+      const response = await fetch(`/api/cli/core/uninstall/${coreId}`);
+      if (!response.ok) throw new Error('Removal failed');
+      const result = await response.text();
+      toast({ title: 'Removal Complete', description: result });
+      refreshInstalled();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
+  const renderSkeletons = () => (
+    <div className="p-2 space-y-2 mx-4">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="p-3 rounded-md flex justify-between items-center">
+            <div className="flex-1 space-y-2">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+            </div>
+            <Skeleton className="h-9 w-20" />
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -46,50 +103,76 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                 <div className="relative px-4">
                     <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                    placeholder="Search for boards"
-                    className="pl-9 bg-background border-border h-9"
+                      placeholder="Search for boards (e.g., 'avr')"
+                      className="pl-9 bg-background border-border h-9"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
             </div>
             <ScrollArea className="flex-1">
-              <div className="p-2 space-y-2">
-                {boards.map((board, index) => (
-                  <div key={index} className="p-3 rounded-md hover:bg-accent mx-4">
-                    <div className="flex justify-between">
-                      <div>
-                        <p className="font-medium">{board.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {board.category}
-                        </p>
+              {isSearching && renderSkeletons()}
+              {searchError && (
+                <Alert variant="destructive" className="m-4">
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{searchError.message}</AlertDescription>
+                </Alert>
+              )}
+              {searchResults && searchResults.cores && (
+                <div className="p-2 space-y-2">
+                  {searchResults.cores.map((core, index) => (
+                    <div key={index} className="p-3 rounded-md hover:bg-accent mx-4">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium">{core.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            ID: {core.id}
+                          </p>
+                        </div>
+                        <Button size="sm" variant="secondary" onClick={() => handleInstall(core.id)}>
+                          Install
+                        </Button>
                       </div>
-                      <Button size="sm" variant="secondary">
-                        Install
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+               {searchResults && searchResults.cores?.length === 0 && (
+                <div className="text-center p-8 text-muted-foreground">No cores found.</div>
+              )}
             </ScrollArea>
           </TabsContent>
           <TabsContent value="installed" className="flex-1 mt-0">
              <ScrollArea className="h-full">
-              <div className="p-6 pt-2">
-                {installedCores.map((core, index) => (
-                  <div key={index} className="p-3 rounded-md hover:bg-accent">
-                    <div className="flex justify-between">
-                      <div>
-                        <p className="font-medium">{core.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Version {core.version}
-                        </p>
+              {isLoadingInstalled && renderSkeletons()}
+              {installedError && (
+                 <Alert variant="destructive" className="m-4">
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{installedError.message}</AlertDescription>
+                </Alert>
+              )}
+              {installedData && installedData.result && (
+                <div className="p-6 pt-2">
+                  {installedData.result.map((core: any, index: number) => (
+                    <div key={index} className="p-3 rounded-md hover:bg-accent">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium">{core.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Version {core.version}
+                          </p>
+                        </div>
+                         <Button size="sm" variant="outline" onClick={() => handleRemove(core.id)}>
+                          Remove
+                        </Button>
                       </div>
-                       <Button size="sm" variant="outline">
-                        Remove
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+              {installedData && installedData.result?.length === 0 && (
+                <div className="text-center p-8 text-muted-foreground">No cores installed.</div>
+              )}
             </ScrollArea>
           </TabsContent>
         </Tabs>

@@ -12,37 +12,88 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
+import { useCli } from '@/hooks/use-cli';
+import { Skeleton } from '../ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
-const libraries = [
-  { name: 'Servo', version: '1.2.1', description: 'Control servo motors.' },
-  {
-    name: 'WiFiNINA',
-    version: '1.8.14',
-    description:
-      'Enable network connection (TCP and UDP) with the WiFiNINA family of shields.',
-  },
-  {
-    name: 'LiquidCrystal',
-    version: '1.0.7',
-    description: 'Control LCD displays.',
-  },
-  {
-    name: 'Stepper',
-    version: '1.1.3',
-    description: 'Control stepper motors.',
-  },
-];
+interface Library {
+  name: string;
+  version: string;
+  author: string;
+  description?: string;
+}
 
-const installedLibraries = [
-    { name: 'Servo', version: '1.2.1', description: 'Control servo motors.' },
-    { name: 'LiquidCrystal', version: '1.0.7', description: 'Control LCD displays.' },
-];
+interface InstalledLibrary {
+  library: {
+    name: string;
+    version: string;
+    author: string;
+    maintainer: string;
+  };
+}
 
 export function LibraryManagerDialog({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { data: searchData, error: searchError, isLoading: isSearching } = useCli<{ libraries: Library[] }>(
+    searchTerm ? ['lib', 'search', searchTerm, '--format', 'json'] : null
+  );
+
+  const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledLibrary[]>(
+    ['lib', 'list', '--format', 'json'],
+    { revalidateOnFocus: true }
+  );
+
+  const handleInstall = async (libName: string) => {
+    toast({ title: `Installing ${libName}...`, description: 'This may take a moment.' });
+    try {
+      const response = await fetch(`/api/cli/lib/install/${libName}`);
+      if (!response.ok) throw new Error('Installation failed');
+      const result = await response.text();
+      toast({ title: 'Installation Complete', description: result });
+      refreshInstalled();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
+  const handleRemove = async (libName: string) => {
+    toast({ title: `Removing ${libName}...` });
+    try {
+      const response = await fetch(`/api/cli/lib/uninstall/${libName}`);
+      if (!response.ok) throw new Error('Removal failed');
+      const result = await response.text();
+      toast({ title: 'Removal Complete', description: result });
+      refreshInstalled();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  };
+
+  const renderSkeletons = () => (
+    <div className="divide-y divide-border">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="p-3 mx-4">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-5 w-1/3" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+            <Skeleton className="h-9 w-20 ml-4 shrink-0" />
+          </div>
+          <Skeleton className="h-3 w-1/4 mt-2" />
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -62,64 +113,92 @@ export function LibraryManagerDialog({
               <div className="relative px-4">
                 <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search for libraries"
+                  placeholder="Search for libraries (e.g., 'servo')"
                   className="pl-9 bg-background border-border h-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
             <ScrollArea className="flex-1">
-              <div className="divide-y divide-border">
-                {libraries.map((lib, index) => (
-                  <div key={index} className="p-3 hover:bg-accent mx-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{lib.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {lib.description}
-                        </p>
+              {isSearching && renderSkeletons()}
+              {searchError && (
+                <Alert variant="destructive" className="m-4">
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{searchError.message}</AlertDescription>
+                </Alert>
+              )}
+              {searchData && searchData.libraries && (
+                <div className="divide-y divide-border">
+                  {searchData.libraries.map((lib, index) => (
+                    <div key={index} className="p-3 hover:bg-accent mx-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{lib.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {lib.description || `By ${lib.author}`}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="ml-4 shrink-0"
+                          onClick={() => handleInstall(lib.name)}
+                        >
+                          Install
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="ml-4 shrink-0"
-                      >
-                        Install
-                      </Button>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Version {lib.version}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Version {lib.version}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+              {searchData && searchData.libraries?.length === 0 && (
+                <div className="text-center p-8 text-muted-foreground">No libraries found.</div>
+              )}
             </ScrollArea>
           </TabsContent>
           <TabsContent value="installed" className="flex-1 mt-0">
             <ScrollArea className="h-full">
-              <div className="divide-y divide-border">
-                {installedLibraries.map((lib, index) => (
-                  <div key={index} className="p-3 hover:bg-accent mx-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{lib.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {lib.description}
-                        </p>
+              {isLoadingInstalled && renderSkeletons()}
+               {installedError && (
+                <Alert variant="destructive" className="m-4">
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{installedError.message}</AlertDescription>
+                </Alert>
+              )}
+              {installedData && (
+                <div className="divide-y divide-border">
+                  {installedData.map((item, index) => (
+                    <div key={index} className="p-3 hover:bg-accent mx-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{item.library.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                           By {item.library.author || item.library.maintainer}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="ml-4 shrink-0"
+                          onClick={() => handleRemove(item.library.name)}
+                        >
+                          Remove
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="ml-4 shrink-0"
-                      >
-                        Remove
-                      </Button>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Version {item.library.version}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Version {lib.version}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+              {installedData && installedData.length === 0 && (
+                 <div className="text-center p-8 text-muted-foreground">No libraries installed.</div>
+              )}
             </ScrollArea>
           </TabsContent>
         </Tabs>
