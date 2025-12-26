@@ -23,15 +23,11 @@ interface Library {
   version: string;
   author: string;
   description?: string;
+  maintainer: string;
 }
 
 interface InstalledLibrary {
-  library: {
-    name: string;
-    version: string;
-    author: string;
-    maintainer: string;
-  };
+  library: Library;
 }
 
 export function LibraryManagerDialog({
@@ -55,8 +51,11 @@ export function LibraryManagerDialog({
     toast({ title: `Installing ${libName}...`, description: 'This may take a moment.' });
     try {
       const response = await fetch(`/api/cli/lib/install/${libName}`);
-      if (!response.ok) throw new Error('Installation failed');
       const result = await response.text();
+       if (!response.ok) {
+        const errorData = JSON.parse(result);
+        throw new Error(errorData.error || 'Installation failed');
+      }
       toast({ title: 'Installation Complete', description: result });
       refreshInstalled();
     } catch (error: any) {
@@ -68,15 +67,18 @@ export function LibraryManagerDialog({
     toast({ title: `Removing ${libName}...` });
     try {
       const response = await fetch(`/api/cli/lib/uninstall/${libName}`);
-      if (!response.ok) throw new Error('Removal failed');
-      const result = await response.text();
+       const result = await response.text();
+       if (!response.ok) {
+        const errorData = JSON.parse(result);
+        throw new Error(errorData.error || 'Removal failed');
+      }
       toast({ title: 'Removal Complete', description: result });
       refreshInstalled();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   };
-
+  
   const renderSkeletons = () => (
     <div className="divide-y divide-border">
       {[...Array(5)].map((_, i) => (

@@ -9,28 +9,38 @@ export async function GET(
     return NextResponse.json({ error: 'No command provided' }, { status: 400 });
   }
 
+  // The dynamic route parts are the command and its main arguments
   const [command, ...restArgs] = params.args;
   
-  // The search query params are passed separately by Next.js
+  // Search query params are handled separately
   const { searchParams } = new URL(request.url);
-  const queryArgs = Array.from(searchParams.entries()).flatMap(([key, value]) => [`--${key}`, value]);
+  const queryArgs = Array.from(searchParams.entries()).flatMap(([key, value]) => {
+    // some args are flags, others are key-value pairs
+    return value ? [`--${key}`, value] : [`--${key}`];
+  });
 
+  // Combine all arguments
   const allArgs = [...restArgs, ...queryArgs];
 
   const { stdout, stderr } = await executeCliCommand(command, allArgs);
 
-  if (stderr) {
-    // Distinguish between actual errors and warnings if needed
-    // For now, any stderr output is considered a potential error
-    return NextResponse.json({ error: stderr, stdout }, { status: 500 });
+  if (stderr && !stdout) {
+    // If there's stderr and no stdout, it's likely a real error.
+    return NextResponse.json({ error: stderr, stdout: stdout }, { status: 500 });
   }
-
+  
+  // Many CLI commands use stderr for progress/status messages, so we check stdout first.
   try {
-    // Try to parse stdout as JSON, as many CLI commands support it
     const jsonOutput = JSON.parse(stdout);
-    return NextResponse.json(jsonOutput);
+    // If there's stderr, we can include it for logging/debugging, but the request is successful.
+    return NextResponse.json(stderr ? { ...jsonOutput, warnings: stderr } : jsonOutput);
   } catch (e) {
-    // If not JSON, return as plain text
-    return new Response(stdout, { headers: { 'Content-Type': 'text/plain' } });
+    // If stdout is not JSON, return as plain text. Stderr is included as a header for debugging.
+    const headers = new Headers();
+    headers.set('Content-Type', 'text/plain');
+    if (stderr) {
+      headers.set('X-Command-Warnings', Buffer.from(stderr).toString('base64'));
+    }
+    return new Response(stdout, { headers });
   }
 }

@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,7 +29,15 @@ interface InstalledCore {
   ID: string;
   Version: string;
   Name: string;
+  id: string; // The API returns both 'ID' and 'id', 'id' is what we need for uninstall
+  name: string;
+  version: string;
 }
+
+interface InstalledCoreResponse {
+  result: InstalledCore[];
+}
+
 
 export function BoardManagerDialog({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
@@ -39,7 +47,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
     searchTerm ? ['core', 'search', searchTerm, '--format', 'json'] : null
   );
   
-  const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<{ result: { name: string, version: string }[] }>(
+  const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledCoreResponse>(
     ['core', 'list', '--format', 'json'],
     { revalidateOnFocus: true }
   );
@@ -48,8 +56,11 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
     toast({ title: `Installing ${coreId}...`, description: 'This may take a moment.' });
     try {
       const response = await fetch(`/api/cli/core/install/${coreId}`);
-      if (!response.ok) throw new Error('Installation failed');
       const result = await response.text();
+       if (!response.ok) {
+        const errorData = JSON.parse(result);
+        throw new Error(errorData.error || 'Installation failed');
+      }
       toast({ title: 'Installation Complete', description: result });
       refreshInstalled();
     } catch (error: any) {
@@ -61,8 +72,11 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
     toast({ title: `Removing ${coreId}...` });
     try {
       const response = await fetch(`/api/cli/core/uninstall/${coreId}`);
-      if (!response.ok) throw new Error('Removal failed');
       const result = await response.text();
+       if (!response.ok) {
+        const errorData = JSON.parse(result);
+        throw new Error(errorData.error || 'Removal failed');
+      }
       toast({ title: 'Removal Complete', description: result });
       refreshInstalled();
     } catch (error: any) {
@@ -153,7 +167,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
               )}
               {installedData && installedData.result && (
                 <div className="p-6 pt-2">
-                  {installedData.result.map((core: any, index: number) => (
+                  {installedData.result.map((core, index) => (
                     <div key={index} className="p-3 rounded-md hover:bg-accent">
                       <div className="flex justify-between">
                         <div>
