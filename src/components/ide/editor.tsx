@@ -42,7 +42,9 @@ export function IdeEditor() {
                 <TabsList className="bg-background rounded-none justify-start border-b border-border p-0 h-10">
                     <TabsTrigger value="sketch_24a" className="data-[state=active]:bg-card data-[state=active]:shadow-none rounded-none border-r border-border h-full flex gap-2">
                         <span>sketch_24a.ino</span>
-                        <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full hover:bg-muted"><X className="h-3 w-3"/></Button>
+                        <Button asChild variant="ghost" size="icon" className="h-5 w-5 rounded-full hover:bg-muted" onClick={(e) => e.stopPropagation()}>
+                            <div><X className="h-3 w-3"/></div>
+                        </Button>
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="sketch_24a" className="flex-1 mt-0">
