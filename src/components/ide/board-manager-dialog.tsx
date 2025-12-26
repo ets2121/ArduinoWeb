@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const boards = [
   { name: 'Arduino Uno', category: 'Arduino AVR Boards' },
@@ -20,42 +21,78 @@ const boards = [
   { name: 'Arduino MKR WiFi 1010', category: 'Arduino SAMD Boards' },
 ];
 
+const installedCores = [
+  { name: 'Arduino AVR Boards', version: '1.8.6' },
+  { name: 'Arduino SAMD Boards (32-bits ARM Cortex-M0+)', version: '1.8.13' },
+];
+
 export function BoardManagerDialog({ children }: { children: React.ReactNode }) {
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl h-3/4 flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl h-3/4 flex flex-col p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>Board Manager</DialogTitle>
         </DialogHeader>
-        <div className="p-2 border-b border-border">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search for boards"
-              className="pl-9 bg-background border-border h-9"
-            />
-          </div>
-        </div>
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-2">
-            {boards.map((board, index) => (
-              <div key={index} className="p-3 rounded-md hover:bg-accent">
-                <div className="flex justify-between">
-                  <div>
-                    <p className="font-medium">{board.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {board.category}
-                    </p>
-                  </div>
-                  <Button size="sm" variant="secondary">
-                    Install
-                  </Button>
+        <Tabs defaultValue="search" className="flex flex-col h-full">
+            <div className="px-6">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="search">Search</TabsTrigger>
+                    <TabsTrigger value="installed">Installed</TabsTrigger>
+                </TabsList>
+            </div>
+          <TabsContent value="search" className="flex-1 flex flex-col mt-0">
+            <div className="p-2 border-b border-t border-border mt-2">
+                <div className="relative px-4">
+                    <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                    placeholder="Search for boards"
+                    className="pl-9 bg-background border-border h-9"
+                    />
                 </div>
+            </div>
+            <ScrollArea className="flex-1">
+              <div className="p-2 space-y-2">
+                {boards.map((board, index) => (
+                  <div key={index} className="p-3 rounded-md hover:bg-accent mx-4">
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="font-medium">{board.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {board.category}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="secondary">
+                        Install
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="installed" className="flex-1 mt-0">
+             <ScrollArea className="h-full">
+              <div className="p-6 pt-2">
+                {installedCores.map((core, index) => (
+                  <div key={index} className="p-3 rounded-md hover:bg-accent">
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="font-medium">{core.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Version {core.version}
+                        </p>
+                      </div>
+                       <Button size="sm" variant="outline">
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
