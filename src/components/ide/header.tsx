@@ -4,7 +4,7 @@ import { ArduinoIcon } from '@/components/ide/icons';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Check, ArrowRight, ChevronDown } from 'lucide-react';
+import { Check, ArrowRight, ChevronDown, Menu } from 'lucide-react';
 import { useSidebar } from '../ui/sidebar';
 import { SidebarTrigger } from '../ui/sidebar';
 
@@ -12,11 +12,11 @@ export function IdeHeader() {
   const { open } = useSidebar();
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 shrink-0">
-      <div className="flex items-center gap-4">
+    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-2 md:px-4 shrink-0">
+      <div className="flex items-center gap-2 md:gap-4">
         {!open && <SidebarTrigger />}
         <div className="flex items-center gap-2">
-            <h1 className="text-lg font-medium text-foreground">Arduino IDE</h1>
+            <h1 className="text-lg font-medium text-foreground hidden sm:block">Arduino IDE</h1>
         </div>
         <div className="flex items-center gap-1 rounded-md bg-background p-1">
           <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary">
@@ -30,7 +30,7 @@ export function IdeHeader() {
           </Button>
         </div>
         <Select defaultValue="uno">
-          <SelectTrigger className="w-48 h-9 bg-background">
+          <SelectTrigger className="w-32 md:w-48 h-9 bg-background">
             <SelectValue placeholder="Select a board" />
           </SelectTrigger>
           <SelectContent>
@@ -41,7 +41,8 @@ export function IdeHeader() {
         </Select>
       </div>
 
-      <div className="flex items-center gap-1">
+      {/* Desktop Menu */}
+      <div className="hidden md:flex items-center gap-1">
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 gap-1">File<ChevronDown className="h-4 w-4" /></Button>
@@ -77,6 +78,29 @@ export function IdeHeader() {
                 <DropdownMenuItem>Upload</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Include Library</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Mobile Menu */}
+      <div className="md:hidden">
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon"><Menu /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem>New Sketch</DropdownMenuItem>
+                <DropdownMenuItem>Open</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Save</DropdownMenuItem>
+                <DropdownMenuItem>Save As...</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Verify/Compile</DropdownMenuItem>
+                <DropdownMenuItem>Upload</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Include Library</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Preferences</DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
       </div>

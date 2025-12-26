@@ -37,7 +37,7 @@ void loop() {
 
 export function IdeEditor() {
     return (
-        <div className="bg-card overflow-hidden">
+        <div className="bg-card overflow-hidden h-full">
             <Tabs defaultValue="sketch_24a" className="h-full flex flex-col">
                 <TabsList className="bg-background rounded-none justify-start border-b border-border p-0 h-10">
                     <TabsTrigger value="sketch_24a" className="data-[state=active]:bg-card data-[state=active]:shadow-none rounded-none border-r border-border h-full flex gap-2">

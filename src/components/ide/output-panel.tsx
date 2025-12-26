@@ -16,7 +16,7 @@ export function IdeOutputPanel() {
     const [activeTab, setActiveTab] = useState("output");
     
     return (
-        <div className="bg-card border-t border-border">
+        <div className="bg-card border-t border-border h-full">
             <Tabs defaultValue="output" onValueChange={setActiveTab} className="h-full flex flex-col">
                 <div className="flex justify-between items-center border-b border-border h-10 shrink-0">
                     <TabsList className="bg-card rounded-none justify-start p-0 h-full">
@@ -50,7 +50,7 @@ export function IdeOutputPanel() {
                 </div>
                 
                 {activeTab === 'serial' && (
-                    <div className="flex items-center gap-2 border-t border-border p-2 shrink-0">
+                    <div className="flex items-center gap-2 border-t border-border p-2 shrink-0 bg-card">
                         <Input placeholder="Message" className="bg-background"/>
                         <Button>Send</Button>
                     </div>
