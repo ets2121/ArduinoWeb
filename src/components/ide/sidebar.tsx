@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   Sidebar as SidebarContainer,
   SidebarHeader,
@@ -183,9 +182,7 @@ function LibraryManagerView({ onBack }: { onBack: () => void }) {
 }
 
 
-export function IdeSidebar() {
-    const [view, setView] = useState('sketchbook'); // 'sketchbook', 'boards', 'libraries'
-
+export function IdeSidebar({ view, setView }: { view: string, setView: (view: string) => void }) {
     return (
         <SidebarContainer className="border-r border-border">
             {view === 'sketchbook' && (

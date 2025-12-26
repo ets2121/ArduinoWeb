@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { IdeHeader } from '@/components/ide/header';
 import { IdeSidebar } from '@/components/ide/sidebar';
 import { IdeEditor } from '@/components/ide/editor';
@@ -6,12 +9,14 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Home() {
+  const [sidebarView, setSidebarView] = useState('sketchbook');
+  
   return (
     <div className="bg-background text-foreground">
       <SidebarProvider defaultOpen={true}>
-        <IdeSidebar />
+        <IdeSidebar view={sidebarView} setView={setSidebarView} />
         <SidebarInset className="!m-0 !h-screen !min-h-screen !rounded-none !p-0 shadow-none flex flex-col">
-          <IdeHeader />
+          <IdeHeader onMenuClick={setSidebarView} />
           <div className="flex-1 grid grid-rows-[minmax(0,1fr)] overflow-hidden md:grid-rows-[minmax(0,3fr)_minmax(0,1fr)]">
             {/* Desktop View */}
             <div className="hidden md:grid md:grid-rows-subgrid md:row-span-2 h-full">

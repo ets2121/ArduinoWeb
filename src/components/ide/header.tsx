@@ -8,8 +8,13 @@ import { Check, ArrowRight, ChevronDown, Menu } from 'lucide-react';
 import { useSidebar } from '../ui/sidebar';
 import { SidebarTrigger } from '../ui/sidebar';
 
-export function IdeHeader() {
-  const { open } = useSidebar();
+export function IdeHeader({ onMenuClick }: { onMenuClick?: (view: string) => void }) {
+  const { open, toggleSidebar } = useSidebar();
+
+  const handleMobileMenuClick = (view: string) => {
+    onMenuClick?.(view);
+    toggleSidebar();
+  }
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-2 md:px-4 shrink-0">
@@ -98,7 +103,8 @@ export function IdeHeader() {
                 <DropdownMenuItem>Verify/Compile</DropdownMenuItem>
                 <DropdownMenuItem>Upload</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Include Library</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleMobileMenuClick('libraries')}>Library Manager</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handleMobileMenuClick('boards')}>Board Manager</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Preferences</DropdownMenuItem>
             </DropdownMenuContent>
