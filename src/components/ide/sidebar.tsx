@@ -2,18 +2,18 @@
 
 import { useState } from 'react';
 import {
-  Sidebar,
+  Sidebar as SidebarContainer,
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
   SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Book, CircuitBoard, Settings, Search, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 
 const examples = {
   '01.Basics': ['BareMinimum', 'Blink', 'DigitalReadSerial', 'AnalogReadSerial', 'Fade'],
@@ -39,6 +39,7 @@ const boards = [
 
 
 function SketchbookView({ onShowBoards, onShowLibraries }: { onShowBoards: () => void; onShowLibraries: () => void; }) {
+    const { isMobile } = useSidebar();
     return (
         <div className="flex flex-col h-full">
             <SidebarHeader className="flex items-center justify-between p-2 pl-4">
@@ -186,7 +187,7 @@ export function IdeSidebar() {
     const [view, setView] = useState('sketchbook'); // 'sketchbook', 'boards', 'libraries'
 
     return (
-        <Sidebar className="border-r border-border">
+        <SidebarContainer className="border-r border-border">
             {view === 'sketchbook' && (
                 <SketchbookView
                     onShowBoards={() => setView('boards')}
@@ -195,6 +196,6 @@ export function IdeSidebar() {
             )}
             {view === 'boards' && <BoardManagerView onBack={() => setView('sketchbook')} />}
             {view === 'libraries' && <LibraryManagerView onBack={() => setView('sketchbook')} />}
-        </Sidebar>
+        </SidebarContainer>
     );
 }
