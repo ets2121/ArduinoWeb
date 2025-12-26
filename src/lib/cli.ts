@@ -78,7 +78,7 @@ export async function executeCliCommand(command: string, args: string[] = []) {
 
   try {
     console.log(`[LOCAL] Executing command: ${fullCommand}`);
-    const { stdout, stderr } = await execAsync(fullCommand, { shell: '/bin/bash' });
+    const { stdout, stderr } = await execAsync(fullCommand);
     return { stdout, stderr };
   } catch (error: any) {
     return { stdout: '', stderr: error.message };
