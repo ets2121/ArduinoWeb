@@ -5,7 +5,7 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
-const isLocal = process.env.NEXT_PUBLIC_IS_LOCAL === 'true';
+const isLocal = process.env.IS_LOCAL === 'true';
 
 // Mock data for development environment
 const mockData: Record<string, any> = {
@@ -77,6 +77,7 @@ export async function executeCliCommand(command: string, args: string[] = []) {
   }
 
   try {
+    console.log(`[LOCAL] Executing command: ${fullCommand}`);
     const { stdout, stderr } = await execAsync(fullCommand, { shell: '/bin/bash' });
     return { stdout, stderr };
   } catch (error: any) {
