@@ -6,7 +6,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Check, ArrowRight, ChevronDown, Menu } from 'lucide-react';
 import { useSidebar } from '../ui/sidebar';
 import { SidebarTrigger } from '../ui/sidebar';
-import Link from 'next/link';
+import { LibraryManagerDialog } from './library-manager-dialog';
+import { BoardManagerDialog } from './board-manager-dialog';
 
 export function IdeHeader() {
   const { open, toggleSidebar } = useSidebar();
@@ -98,8 +99,12 @@ export function IdeHeader() {
                 <DropdownMenuItem>Verify/Compile</DropdownMenuItem>
                 <DropdownMenuItem>Upload</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <Link href="/libraries"><DropdownMenuItem>Library Manager</DropdownMenuItem></Link>
-                <Link href="/boards"><DropdownMenuItem>Board Manager</DropdownMenuItem></Link>
+                <LibraryManagerDialog>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Library Manager</DropdownMenuItem>
+                </LibraryManagerDialog>
+                <BoardManagerDialog>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Board Manager</DropdownMenuItem>
+                </BoardManagerDialog>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Preferences</DropdownMenuItem>
             </DropdownMenuContent>

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Sidebar as SidebarContainer,
@@ -12,8 +11,11 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
 import { Book, CircuitBoard, Settings, Notebook } from 'lucide-react';
+import Link from 'next/link';
+import { LibraryManagerDialog } from './library-manager-dialog';
+import { BoardManagerDialog } from './board-manager-dialog';
+
 
 export function IdeSidebar() {
     const pathname = usePathname();
@@ -36,20 +38,20 @@ export function IdeSidebar() {
                             </Link>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <Link href="/libraries">
-                                <SidebarMenuButton isActive={pathname === '/libraries'} tooltip="Library Manager">
+                            <LibraryManagerDialog>
+                                <SidebarMenuButton tooltip="Library Manager">
                                     <Book />
                                     <span>Libraries</span>
                                 </SidebarMenuButton>
-                            </Link>
+                            </LibraryManagerDialog>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                           <Link href="/boards">
-                                <SidebarMenuButton isActive={pathname === '/boards'} tooltip="Board Manager">
+                           <BoardManagerDialog>
+                                <SidebarMenuButton tooltip="Board Manager">
                                     <CircuitBoard />
                                     <span>Boards</span>
                                 </SidebarMenuButton>
-                            </Link>
+                            </BoardManagerDialog>
                         </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
