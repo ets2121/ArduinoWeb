@@ -40,7 +40,7 @@ const boards = [
 
 function SketchbookView({ onShowBoards, onShowLibraries }: { onShowBoards: () => void; onShowLibraries: () => void; }) {
     return (
-        <>
+        <div className="flex flex-col h-full">
             <SidebarHeader className="flex items-center justify-between p-2 pl-4">
                 <h2 className="text-lg font-semibold">Sketchbook</h2>
                 <SidebarTrigger />
@@ -52,45 +52,47 @@ function SketchbookView({ onShowBoards, onShowLibraries }: { onShowBoards: () =>
                         <Input placeholder="Filter your sketches" className="pl-9 bg-sidebar-accent border-none h-9" />
                     </div>
                 </div>
-                <Accordion type="multiple" defaultValue={['examples']} className="w-full px-2">
-                    <AccordionItem value="sketchbook" className="border-none">
-                        <AccordionTrigger className="hover:no-underline text-base font-medium px-2 py-2 hover:bg-sidebar-accent rounded-md">
-                            Sketchbook
-                        </AccordionTrigger>
-                        <AccordionContent className="pl-4 text-sm">
-                            Your sketches will appear here.
-                        </AccordionContent>
-                    </AccordionItem>
-                    <AccordionItem value="examples" className="border-none">
-                        <AccordionTrigger className="hover:no-underline text-base font-medium px-2 py-2 hover:bg-sidebar-accent rounded-md">
-                            Examples
-                        </AccordionTrigger>
-                        <AccordionContent className="pl-2">
-                            <Accordion type="single" collapsible className="w-full">
-                                {Object.entries(examples).map(([category, items]) => (
-                                    <AccordionItem value={category} key={category} className="border-none">
-                                        <AccordionTrigger className="hover:no-underline text-sm font-normal py-1.5 px-2 hover:bg-sidebar-accent rounded-md">
-                                            {category}
-                                        </AccordionTrigger>
-                                        <AccordionContent className="pl-6">
-                                            <ul className="space-y-1 py-1">
-                                                {items.map((item) => (
-                                                    <li key={item}>
-                                                        <Button variant="link" className="p-0 h-auto text-muted-foreground hover:text-foreground font-normal">
-                                                            {item}
-                                                        </Button>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                ))}
-                            </Accordion>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
+                <ScrollArea>
+                    <Accordion type="multiple" defaultValue={['examples']} className="w-full px-2">
+                        <AccordionItem value="sketchbook" className="border-none">
+                            <AccordionTrigger className="hover:no-underline text-base font-medium px-2 py-2 hover:bg-sidebar-accent rounded-md">
+                                Sketchbook
+                            </AccordionTrigger>
+                            <AccordionContent className="pl-4 text-sm">
+                                Your sketches will appear here.
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="examples" className="border-none">
+                            <AccordionTrigger className="hover:no-underline text-base font-medium px-2 py-2 hover:bg-sidebar-accent rounded-md">
+                                Examples
+                            </AccordionTrigger>
+                            <AccordionContent className="pl-2">
+                                <Accordion type="single" collapsible className="w-full">
+                                    {Object.entries(examples).map(([category, items]) => (
+                                        <AccordionItem value={category} key={category} className="border-none">
+                                            <AccordionTrigger className="hover:no-underline text-sm font-normal py-1.5 px-2 hover:bg-sidebar-accent rounded-md">
+                                                {category}
+                                            </AccordionTrigger>
+                                            <AccordionContent className="pl-6">
+                                                <ul className="space-y-1 py-1">
+                                                    {items.map((item) => (
+                                                        <li key={item}>
+                                                            <Button variant="link" className="p-0 h-auto text-muted-foreground hover:text-foreground font-normal">
+                                                                {item}
+                                                            </Button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    ))}
+                                </Accordion>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </ScrollArea>
             </SidebarContent>
-            <SidebarFooter className="p-2 border-t border-sidebar-border space-y-1">
+            <SidebarFooter className="p-2 border-t border-sidebar-border space-y-1 mt-auto">
                 <Button variant="ghost" className="w-full justify-start gap-2" onClick={onShowLibraries}>
                     <Book className="h-4 w-4" />
                     Library Manager
@@ -104,13 +106,13 @@ function SketchbookView({ onShowBoards, onShowLibraries }: { onShowBoards: () =>
                     Preferences
                 </Button>
             </SidebarFooter>
-        </>
+        </div>
     );
 }
 
 function BoardManagerView({ onBack }: { onBack: () => void }) {
     return (
-        <>
+        <div className="flex flex-col h-full">
             <SidebarHeader className="flex items-center p-2 pl-3">
                 <Button variant="ghost" size="icon" className="h-8 w-8 mr-2" onClick={onBack}>
                     <ArrowLeft className="h-5 w-5" />
@@ -138,13 +140,13 @@ function BoardManagerView({ onBack }: { onBack: () => void }) {
                     </div>
                 </ScrollArea>
             </SidebarContent>
-        </>
+        </div>
     )
 }
 
 function LibraryManagerView({ onBack }: { onBack: () => void }) {
     return (
-        <>
+        <div className="flex flex-col h-full">
             <SidebarHeader className="flex items-center p-2 pl-3">
                 <Button variant="ghost" size="icon" className="h-8 w-8 mr-2" onClick={onBack}>
                     <ArrowLeft className="h-5 w-5" />
@@ -175,7 +177,7 @@ function LibraryManagerView({ onBack }: { onBack: () => void }) {
                     </div>
                 </ScrollArea>
             </SidebarContent>
-        </>
+        </div>
     )
 }
 
