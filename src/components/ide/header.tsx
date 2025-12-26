@@ -1,25 +1,20 @@
 'use client';
 
-import { ArduinoIcon } from '@/components/ide/icons';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Check, ArrowRight, ChevronDown, Menu } from 'lucide-react';
 import { useSidebar } from '../ui/sidebar';
 import { SidebarTrigger } from '../ui/sidebar';
+import Link from 'next/link';
 
-export function IdeHeader({ onMenuClick }: { onMenuClick?: (view: string) => void }) {
+export function IdeHeader() {
   const { open, toggleSidebar } = useSidebar();
-
-  const handleMobileMenuClick = (view: string) => {
-    onMenuClick?.(view);
-    toggleSidebar();
-  }
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-2 md:px-4 shrink-0">
       <div className="flex items-center gap-2 md:gap-4">
-        {!open && <SidebarTrigger />}
+        <SidebarTrigger className={open ? 'hidden' : ''} />
         <div className="flex items-center gap-2">
             <h1 className="text-lg font-medium text-foreground hidden sm:block">Arduino IDE</h1>
         </div>
@@ -103,8 +98,8 @@ export function IdeHeader({ onMenuClick }: { onMenuClick?: (view: string) => voi
                 <DropdownMenuItem>Verify/Compile</DropdownMenuItem>
                 <DropdownMenuItem>Upload</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => handleMobileMenuClick('libraries')}>Library Manager</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleMobileMenuClick('boards')}>Board Manager</DropdownMenuItem>
+                <Link href="/libraries"><DropdownMenuItem>Library Manager</DropdownMenuItem></Link>
+                <Link href="/boards"><DropdownMenuItem>Board Manager</DropdownMenuItem></Link>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Preferences</DropdownMenuItem>
             </DropdownMenuContent>
