@@ -32,9 +32,8 @@ interface SearchedLibrary {
 }
 
 interface LibrarySearchResult {
-    libraries: SearchedLibrary[];
+  libraries: SearchedLibrary[];
 }
-
 
 interface InstalledLibraryInfo {
   name: string;
@@ -44,13 +43,12 @@ interface InstalledLibraryInfo {
 }
 
 interface InstalledLibrary {
-  library: InstalledLibraryInfo
+  library: InstalledLibraryInfo;
 }
 
 interface InstalledLibrariesResponse {
-    installed_libraries: InstalledLibrary[];
+  installed_libraries: InstalledLibrary[];
 }
-
 
 export function LibraryManagerDialog({
   children,
@@ -61,11 +59,11 @@ export function LibraryManagerDialog({
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: searchData, error: searchError, isLoading: isSearching } = useCli<LibrarySearchResult>(
-    searchTerm ? ['lib', 'search', searchTerm, `format=json`] : null
+    searchTerm ? ['lib', 'search', searchTerm, 'format=json'] : null
   );
 
   const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledLibrariesResponse>(
-    ['lib', 'list', `format=json`],
+    ['lib', 'list', 'format=json'],
     { revalidateOnFocus: true }
   );
 
@@ -74,12 +72,12 @@ export function LibraryManagerDialog({
     try {
       const response = await fetch(`/api/cli/lib/install/${libName}`);
       const result = await response.text();
-       if (!response.ok) {
+      if (!response.ok) {
         try {
-            const errorData = JSON.parse(result);
-            throw new Error(errorData.error || 'Installation failed');
+          const errorData = JSON.parse(result);
+          throw new Error(errorData.error || 'Installation failed');
         } catch (e) {
-            throw new Error(result || 'Installation failed');
+          throw new Error(result || 'Installation failed');
         }
       }
       toast({ title: 'Installation Complete', description: result });
@@ -93,13 +91,13 @@ export function LibraryManagerDialog({
     toast({ title: `Removing ${libName}...` });
     try {
       const response = await fetch(`/api/cli/lib/uninstall/${libName}`);
-       const result = await response.text();
-       if (!response.ok) {
+      const result = await response.text();
+      if (!response.ok) {
         try {
-            const errorData = JSON.parse(result);
-            throw new Error(errorData.error || 'Removal failed');
-        } catch(e) {
-            throw new Error(result || 'Removal failed');
+          const errorData = JSON.parse(result);
+          throw new Error(errorData.error || 'Removal failed');
+        } catch (e) {
+          throw new Error(result || 'Removal failed');
         }
       }
       toast({ title: 'Removal Complete', description: result });
@@ -108,7 +106,7 @@ export function LibraryManagerDialog({
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   };
-  
+
   const renderSkeletons = () => (
     <div className="divide-y divide-border p-4">
       {[...Array(5)].map((_, i) => (
@@ -136,15 +134,15 @@ export function LibraryManagerDialog({
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Library Manager</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="search" className="flex flex-col flex-1 h-full">
+        <Tabs defaultValue="search" className="flex flex-col flex-1 h-full overflow-hidden">
           <div className="px-6 mt-4">
             <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="search">Search</TabsTrigger>
-                <TabsTrigger value="installed">Installed</TabsTrigger>
+              <TabsTrigger value="search">Search</TabsTrigger>
+              <TabsTrigger value="installed">Installed</TabsTrigger>
             </TabsList>
           </div>
           <TabsContent value="search" className="flex-1 flex flex-col mt-0 overflow-hidden">
-            <div className="p-2 border-b border-t border-border mt-2">
+            <div className="p-2 border-b border-t border-border mt-2 shrink-0">
               <div className="relative px-4">
                 <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -163,7 +161,7 @@ export function LibraryManagerDialog({
                   <AlertDescription>{searchError.message}</AlertDescription>
                 </Alert>
               )}
-              {searchData && (
+              {searchData && 'libraries' in searchData && (
                 <div className="divide-y divide-border p-4">
                   {searchedLibraries.map((lib, index) => (
                     <div key={index} className="p-3 hover:bg-accent">
@@ -198,13 +196,13 @@ export function LibraryManagerDialog({
           <TabsContent value="installed" className="flex-1 mt-0 overflow-hidden">
             <ScrollArea className="h-full">
               {isLoadingInstalled && renderSkeletons()}
-               {installedError && (
+              {installedError && (
                 <Alert variant="destructive" className="m-4">
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{installedError.message}</AlertDescription>
                 </Alert>
               )}
-              {installedData && (
+              {installedData && 'installed_libraries' in installedData && (
                 <div className="divide-y divide-border p-4">
                   {installedLibraries.map((item, index) => (
                     <div key={index} className="p-3 hover:bg-accent">
@@ -212,7 +210,7 @@ export function LibraryManagerDialog({
                         <div>
                           <p className="font-medium">{item.library.name}</p>
                           <p className="text-sm text-muted-foreground">
-                           By {item.library.author || item.library.maintainer}
+                            By {item.library.author || item.library.maintainer}
                           </p>
                         </div>
                         <Button
@@ -232,7 +230,7 @@ export function LibraryManagerDialog({
                 </div>
               )}
               {installedData && installedLibraries.length === 0 && (
-                 <div className="text-center p-8 text-muted-foreground">No libraries installed.</div>
+                <div className="text-center p-8 text-muted-foreground">No libraries installed.</div>
               )}
             </ScrollArea>
           </TabsContent>

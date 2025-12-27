@@ -33,30 +33,27 @@ interface CoreSearchResult {
   platforms: SearchedPlatform[];
 }
 
-
 interface InstalledPlatform {
   id: string;
   installed_version: string;
   latest_version: string;
-  name?: string; 
+  name?: string;
 }
-
 
 interface InstalledCoreResponse {
   platforms: InstalledPlatform[];
 }
 
-
 export function BoardManagerDialog({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const { data: searchResults, error: searchError, isLoading: isSearching } = useCli<CoreSearchResult>(
-    searchTerm ? ['core', 'search', searchTerm, `format=json`] : null
+    searchTerm ? ['core', 'search', searchTerm, 'format=json'] : null
   );
-  
+
   const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledCoreResponse>(
-    ['core', 'list', `format=json`],
+    ['core', 'list', 'format=json'],
     { revalidateOnFocus: true }
   );
 
@@ -65,11 +62,11 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
     try {
       const response = await fetch(`/api/cli/core/install/${coreId}`);
       const result = await response.text();
-       if (!response.ok) {
+      if (!response.ok) {
         try {
           const errorData = JSON.parse(result);
           throw new Error(errorData.error || 'Installation failed');
-        } catch(e) {
+        } catch (e) {
           throw new Error(result || 'Installation failed');
         }
       }
@@ -85,11 +82,11 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
     try {
       const response = await fetch(`/api/cli/core/uninstall/${coreId}`);
       const result = await response.text();
-       if (!response.ok) {
+      if (!response.ok) {
         try {
           const errorData = JSON.parse(result);
           throw new Error(errorData.error || 'Removal failed');
-        } catch(e) {
+        } catch (e) {
           throw new Error(result || 'Removal failed');
         }
       }
@@ -104,11 +101,11 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
     <div className="p-2 space-y-2 mx-4">
       {[...Array(3)].map((_, i) => (
         <div key={i} className="p-3 rounded-md flex justify-between items-center">
-            <div className="flex-1 space-y-2">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-            </div>
-            <Skeleton className="h-9 w-20" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+          <Skeleton className="h-9 w-20" />
         </div>
       ))}
     </div>
@@ -124,24 +121,24 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Board Manager</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="search" className="flex flex-col flex-1 h-full">
-            <div className="px-6 mt-4">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="search">Search</TabsTrigger>
-                    <TabsTrigger value="installed">Installed</TabsTrigger>
-                </TabsList>
-            </div>
+        <Tabs defaultValue="search" className="flex flex-col flex-1 h-full overflow-hidden">
+          <div className="px-6 mt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="search">Search</TabsTrigger>
+              <TabsTrigger value="installed">Installed</TabsTrigger>
+            </TabsList>
+          </div>
           <TabsContent value="search" className="flex-1 flex flex-col mt-0 overflow-hidden">
-            <div className="p-2 border-b border-t border-border mt-2">
-                <div className="relative px-4">
-                    <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search for boards (e.g., 'avr')"
-                      className="pl-9 bg-background border-border h-9"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
+            <div className="p-2 border-b border-t border-border mt-2 shrink-0">
+              <div className="relative px-4">
+                <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search for boards (e.g., 'avr')"
+                  className="pl-9 bg-background border-border h-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
             <ScrollArea className="flex-1">
               {isSearching && renderSkeletons()}
@@ -151,7 +148,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                   <AlertDescription>{searchError.message}</AlertDescription>
                 </Alert>
               )}
-              {searchResults && (
+              {searchResults && 'platforms' in searchResults && (
                 <div className="p-2 space-y-2">
                   {searchedPlatforms.map((platform, index) => (
                     <div key={index} className="p-3 rounded-md hover:bg-accent mx-4">
@@ -170,21 +167,21 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                   ))}
                 </div>
               )}
-               {searchResults && searchedPlatforms.length === 0 && (
+              {searchResults && searchedPlatforms.length === 0 && (
                 <div className="text-center p-8 text-muted-foreground">No cores found.</div>
               )}
             </ScrollArea>
           </TabsContent>
           <TabsContent value="installed" className="flex-1 mt-0 overflow-hidden">
-             <ScrollArea className="h-full">
+            <ScrollArea className="h-full">
               {isLoadingInstalled && renderSkeletons()}
               {installedError && (
-                 <Alert variant="destructive" className="m-4">
+                <Alert variant="destructive" className="m-4">
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{installedError.message}</AlertDescription>
                 </Alert>
               )}
-              {installedData && (
+              {installedData && 'platforms' in installedData && (
                 <div className="p-4">
                   {installedCores.map((core, index) => (
                     <div key={index} className="p-3 rounded-md hover:bg-accent">
@@ -195,7 +192,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                             Version {core.installed_version}
                           </p>
                         </div>
-                         <Button size="sm" variant="outline" onClick={() => handleRemove(core.id)}>
+                        <Button size="sm" variant="outline" onClick={() => handleRemove(core.id)}>
                           Remove
                         </Button>
                       </div>
