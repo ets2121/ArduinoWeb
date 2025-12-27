@@ -52,11 +52,11 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
   const [searchTerm, setSearchTerm] = useState('');
   
   const { data: searchResults, error: searchError, isLoading: isSearching } = useCli<CoreSearchResult>(
-    searchTerm ? ['core', 'search', searchTerm, '--format', 'json'] : null
+    searchTerm ? ['core', 'search', searchTerm, `format=json`] : null
   );
   
   const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledCoreResponse>(
-    ['core', 'list', '--format', 'json'],
+    ['core', 'list', `format=json`],
     { revalidateOnFocus: true }
   );
 
@@ -124,14 +124,14 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Board Manager</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="search" className="flex flex-col h-full">
-            <div className="px-6">
+        <Tabs defaultValue="search" className="flex flex-col flex-1 h-full">
+            <div className="px-6 mt-4">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="search">Search</TabsTrigger>
                     <TabsTrigger value="installed">Installed</TabsTrigger>
                 </TabsList>
             </div>
-          <TabsContent value="search" className="flex-1 flex flex-col mt-0">
+          <TabsContent value="search" className="flex-1 flex flex-col mt-0 overflow-hidden">
             <div className="p-2 border-b border-t border-border mt-2">
                 <div className="relative px-4">
                     <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -175,7 +175,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
               )}
             </ScrollArea>
           </TabsContent>
-          <TabsContent value="installed" className="flex-1 mt-0">
+          <TabsContent value="installed" className="flex-1 mt-0 overflow-hidden">
              <ScrollArea className="h-full">
               {isLoadingInstalled && renderSkeletons()}
               {installedError && (
@@ -185,7 +185,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                 </Alert>
               )}
               {installedData && (
-                <div className="p-6 pt-2">
+                <div className="p-4">
                   {installedCores.map((core, index) => (
                     <div key={index} className="p-3 rounded-md hover:bg-accent">
                       <div className="flex justify-between">

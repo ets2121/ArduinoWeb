@@ -36,13 +36,15 @@ interface LibrarySearchResult {
 }
 
 
+interface InstalledLibraryInfo {
+  name: string;
+  version: string;
+  author: string;
+  maintainer: string;
+}
+
 interface InstalledLibrary {
-  library: {
-    name: string;
-    version: string;
-    author: string;
-    maintainer: string;
-  };
+  library: InstalledLibraryInfo
 }
 
 interface InstalledLibrariesResponse {
@@ -59,11 +61,11 @@ export function LibraryManagerDialog({
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: searchData, error: searchError, isLoading: isSearching } = useCli<LibrarySearchResult>(
-    searchTerm ? ['lib', 'search', searchTerm, '--format', 'json'] : null
+    searchTerm ? ['lib', 'search', searchTerm, `format=json`] : null
   );
 
   const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledLibrariesResponse>(
-    ['lib', 'list', '--format', 'json'],
+    ['lib', 'list', `format=json`],
     { revalidateOnFocus: true }
   );
 
@@ -108,9 +110,9 @@ export function LibraryManagerDialog({
   };
   
   const renderSkeletons = () => (
-    <div className="divide-y divide-border">
+    <div className="divide-y divide-border p-4">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="p-3 mx-4">
+        <div key={i} className="p-3">
           <div className="flex justify-between items-start">
             <div className="space-y-2 flex-1">
               <Skeleton className="h-5 w-1/3" />
@@ -124,6 +126,9 @@ export function LibraryManagerDialog({
     </div>
   );
 
+  const installedLibraries = installedData?.installed_libraries || [];
+  const searchedLibraries = searchData?.libraries || [];
+
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -131,14 +136,14 @@ export function LibraryManagerDialog({
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Library Manager</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="search" className="flex flex-col h-full">
-          <div className="px-6">
+        <Tabs defaultValue="search" className="flex flex-col flex-1 h-full">
+          <div className="px-6 mt-4">
             <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="search">Search</TabsTrigger>
                 <TabsTrigger value="installed">Installed</TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="search" className="flex-1 flex flex-col mt-0">
+          <TabsContent value="search" className="flex-1 flex flex-col mt-0 overflow-hidden">
             <div className="p-2 border-b border-t border-border mt-2">
               <div className="relative px-4">
                 <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -158,10 +163,10 @@ export function LibraryManagerDialog({
                   <AlertDescription>{searchError.message}</AlertDescription>
                 </Alert>
               )}
-              {searchData && searchData.libraries && (
-                <div className="divide-y divide-border">
-                  {searchData.libraries.map((lib, index) => (
-                    <div key={index} className="p-3 hover:bg-accent mx-4">
+              {searchData && (
+                <div className="divide-y divide-border p-4">
+                  {searchedLibraries.map((lib, index) => (
+                    <div key={index} className="p-3 hover:bg-accent">
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium">{lib.name}</p>
@@ -185,12 +190,12 @@ export function LibraryManagerDialog({
                   ))}
                 </div>
               )}
-              {searchData && searchData.libraries?.length === 0 && (
+              {searchData && searchedLibraries.length === 0 && (
                 <div className="text-center p-8 text-muted-foreground">No libraries found.</div>
               )}
             </ScrollArea>
           </TabsContent>
-          <TabsContent value="installed" className="flex-1 mt-0">
+          <TabsContent value="installed" className="flex-1 mt-0 overflow-hidden">
             <ScrollArea className="h-full">
               {isLoadingInstalled && renderSkeletons()}
                {installedError && (
@@ -199,10 +204,10 @@ export function LibraryManagerDialog({
                   <AlertDescription>{installedError.message}</AlertDescription>
                 </Alert>
               )}
-              {installedData && installedData.installed_libraries && (
-                <div className="divide-y divide-border">
-                  {installedData.installed_libraries.map((item, index) => (
-                    <div key={index} className="p-3 hover:bg-accent mx-4">
+              {installedData && (
+                <div className="divide-y divide-border p-4">
+                  {installedLibraries.map((item, index) => (
+                    <div key={index} className="p-3 hover:bg-accent">
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium">{item.library.name}</p>
@@ -226,7 +231,7 @@ export function LibraryManagerDialog({
                   ))}
                 </div>
               )}
-              {installedData && installedData.installed_libraries?.length === 0 && (
+              {installedData && installedLibraries.length === 0 && (
                  <div className="text-center p-8 text-muted-foreground">No libraries installed.</div>
               )}
             </ScrollArea>
