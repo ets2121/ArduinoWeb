@@ -164,7 +164,7 @@ export function LibraryManagerDialog({
                   <AlertDescription>{searchError.message}</AlertDescription>
                 </Alert>
               )}
-              {searchData?.libraries && (
+              {searchData && 'libraries' in searchData && (
                 <div className="divide-y divide-border p-4">
                   {searchedLibraries.map((lib, index) => (
                     <div key={index} className="p-3 hover:bg-accent">
