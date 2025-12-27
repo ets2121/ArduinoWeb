@@ -9,7 +9,7 @@ const isLocal = process.env.IS_LOCAL === 'true';
 
 // Mock data for development environment
 const mockData: Record<string, any> = {
-  'board list --format json': {
+  'board list --json': {
     stdout: JSON.stringify({
       "detected_ports": [
         {
@@ -32,7 +32,7 @@ const mockData: Record<string, any> = {
     }),
     stderr: '',
   },
-  'lib list --format json': {
+  'lib list --json': {
     stdout: JSON.stringify({
       installed_libraries: [
         {
@@ -55,7 +55,7 @@ const mockData: Record<string, any> = {
     }),
     stderr: '',
   },
-  'core list --format json': {
+  'core list --json': {
     stdout: JSON.stringify({
       platforms: [
         { id: 'arduino:avr', name: 'Arduino AVR Boards', installed_version: '1.8.6', latest_version: '1.8.6' },
@@ -63,7 +63,7 @@ const mockData: Record<string, any> = {
     }),
     stderr: '',
   },
-  'lib search servo --format json': {
+  'lib search servo --json': {
     stdout: JSON.stringify({
       libraries: [
         {
@@ -79,7 +79,7 @@ const mockData: Record<string, any> = {
     }),
     stderr: '',
   },
-   'lib search sd --format json': {
+   'lib search sd --json': {
     stdout: JSON.stringify({
       libraries: [
         {
@@ -95,7 +95,7 @@ const mockData: Record<string, any> = {
     }),
     stderr: '',
   },
-  'core search avr --format json': {
+  'core search avr --json': {
     stdout: JSON.stringify({
       platforms: [{ id: 'arduino:avr', name: 'Arduino AVR Boards', latest_version: '1.8.6', releases: {'1.8.6': {name: 'Arduino AVR Boards'}} }],
     }),
@@ -129,29 +129,29 @@ Global variables use 9 bytes (0%) of dynamic memory, leaving 2039 bytes for loca
 };
 
 function getMockData(command: string, args: string[]) {
-    const fullCommand = `${command} ${args.join(' ')}`;
-    console.log(`[MOCK] Searching for command: ${fullCommand}`);
+    const commandAndArgs = [command, ...args].join(' ').trim();
+    console.log(`[MOCK] Searching for command: ${commandAndArgs}`);
     
     // Prioritize exact matches
-    if(mockData[fullCommand]) return mockData[fullCommand];
+    if(mockData[commandAndArgs]) return mockData[commandAndArgs];
 
     const simpleCommand = command;
-    const action = args[0]; 
-    const format = args.includes('--format') && args.includes('json') ? '--format json' : '';
-    const query = args.find(a => !a.startsWith('--') && a !== command && a !== action);
+    const action = args.find(a => !a.startsWith('--'));
 
-    let mockKey = `${simpleCommand} ${action}${query ? ` ${query}`: ''}${format ? ` ${format}`:''}`.trim();
-    if(mockData[mockKey]) return mockData[mockKey];
+    let mockKey = `${simpleCommand}${action ? ' ' + action : ''}`;
     
     // Fallback for install/uninstall
-    if(simpleCommand === 'lib' && (action === 'install' || action ==='uninstall')) {
+    if (simpleCommand === 'lib' && (action === 'install' || action === 'uninstall')) {
       return mockData[`lib ${action}`];
     }
-     if(simpleCommand === 'core' && (action === 'install' || action === 'uninstall')) {
+    if (simpleCommand === 'core' && (action === 'install' || action === 'uninstall')) {
       return mockData[`core ${action}`];
     }
     
-    return { stdout: `{"message": "No mock data for '${fullCommand}'"}`, stderr: '' };
+    const searchKey = `${simpleCommand} ${action} ${args.find(a => !a.startsWith('--') && a !== action)} --json`.trim();
+    if(mockData[searchKey]) return mockData[searchKey];
+    
+    return { stdout: `{"message": "No mock data for '${commandAndArgs}'"}`, stderr: '' };
 }
 
 export async function executeCliCommand(command: string, args: string[] = []) {
@@ -159,15 +159,7 @@ export async function executeCliCommand(command: string, args: string[] = []) {
     return getMockData(command, args);
   }
 
-  const sanitizedArgs = args.map(arg => {
-    if (!arg) return '';
-    if (/\s/.test(arg) && !/^".*"$/.test(arg) && !/^'.*'$/.test(arg)) {
-       return `"${arg.replace(/"/g, '\\"')}"`;
-    }
-    return arg;
-  }).join(' ');
-  
-  const commandWithArgs = `arduino-cli ${command} ${sanitizedArgs}`;
+  const commandWithArgs = `arduino-cli ${command} ${args.join(' ')}`;
 
   try {
     console.log(`[LOCAL] Executing command: ${commandWithArgs}`);
