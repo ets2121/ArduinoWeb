@@ -74,14 +74,16 @@ export function LibraryManagerDialog({
       const result = await response.text();
       if (!response.ok) {
         try {
+          // Try to parse error from JSON response
           const errorData = JSON.parse(result);
           throw new Error(errorData.error || 'Installation failed');
         } catch (e) {
+          // Fallback to text response
           throw new Error(result || 'Installation failed');
         }
       }
       toast({ title: 'Installation Complete', description: result });
-      refreshInstalled();
+      refreshInstalled(); // Refresh the list of installed libraries
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
@@ -162,7 +164,7 @@ export function LibraryManagerDialog({
                   <AlertDescription>{searchError.message}</AlertDescription>
                 </Alert>
               )}
-              {searchData?.libraries && (
+              {searchData?.lbraries && (
                 <div className="divide-y divide-border p-4">
                   {searchedLibraries.map((lib, index) => (
                     <div key={index} className="p-3 hover:bg-accent">
@@ -203,7 +205,7 @@ export function LibraryManagerDialog({
                   <AlertDescription>{installedError.message}</AlertDescription>
                 </Alert>
               )}
-              {installedData?.installed_libraries && (
+              {installedData && 'installed_libraries' in installedData && (
                 <div className="divide-y divide-border p-4">
                   {installedLibraries.map((item, index) => (
                     <div key={index} className="p-3 hover:bg-accent">
