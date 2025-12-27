@@ -18,17 +18,31 @@ import { Skeleton } from '../ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
-interface Library {
-  name: string;
-  version: string;
+interface LibraryRelease {
   author: string;
-  description?: string;
+  version: string;
   maintainer: string;
-  sentence?: string;
+  sentence: string;
+  paragraph: string;
 }
 
+interface SearchedLibrary {
+  name: string;
+  latest: LibraryRelease;
+}
+
+interface LibrarySearchResult {
+    libraries: SearchedLibrary[];
+}
+
+
 interface InstalledLibrary {
-  library: Library;
+  library: {
+    name: string;
+    version: string;
+    author: string;
+    maintainer: string;
+  };
 }
 
 interface InstalledLibrariesResponse {
@@ -44,7 +58,7 @@ export function LibraryManagerDialog({
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: searchData, error: searchError, isLoading: isSearching } = useCli<{ libraries: Library[] }>(
+  const { data: searchData, error: searchError, isLoading: isSearching } = useCli<LibrarySearchResult>(
     searchTerm ? ['lib', 'search', searchTerm, '--format', 'json'] : null
   );
 
@@ -59,8 +73,12 @@ export function LibraryManagerDialog({
       const response = await fetch(`/api/cli/lib/install/${libName}`);
       const result = await response.text();
        if (!response.ok) {
-        const errorData = JSON.parse(result);
-        throw new Error(errorData.error || 'Installation failed');
+        try {
+            const errorData = JSON.parse(result);
+            throw new Error(errorData.error || 'Installation failed');
+        } catch (e) {
+            throw new Error(result || 'Installation failed');
+        }
       }
       toast({ title: 'Installation Complete', description: result });
       refreshInstalled();
@@ -75,8 +93,12 @@ export function LibraryManagerDialog({
       const response = await fetch(`/api/cli/lib/uninstall/${libName}`);
        const result = await response.text();
        if (!response.ok) {
-        const errorData = JSON.parse(result);
-        throw new Error(errorData.error || 'Removal failed');
+        try {
+            const errorData = JSON.parse(result);
+            throw new Error(errorData.error || 'Removal failed');
+        } catch(e) {
+            throw new Error(result || 'Removal failed');
+        }
       }
       toast({ title: 'Removal Complete', description: result });
       refreshInstalled();
@@ -144,7 +166,7 @@ export function LibraryManagerDialog({
                         <div>
                           <p className="font-medium">{lib.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            {lib.sentence || lib.description || `By ${lib.author}`}
+                            {lib.latest.sentence || `By ${lib.latest.author}`}
                           </p>
                         </div>
                         <Button
@@ -157,7 +179,7 @@ export function LibraryManagerDialog({
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Version {lib.version}
+                        Version {lib.latest.version}
                       </p>
                     </div>
                   ))}

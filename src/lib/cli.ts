@@ -63,13 +63,33 @@ const mockData: Record<string, any> = {
   },
   'lib search servo': {
     stdout: JSON.stringify({
-      libraries: [{ name: 'Servo', version: '1.2.1', author: 'Arduino', sentence: 'Allows Arduino boards to control a variety of servo motors.' }],
+      libraries: [
+        {
+          name: 'Servo',
+          latest: {
+            author: 'Arduino',
+            version: '1.2.1',
+            maintainer: 'Arduino',
+            sentence: 'Allows Arduino boards to control a variety of servo motors.',
+          },
+        },
+      ],
     }),
     stderr: '',
   },
    'lib search sd': {
     stdout: JSON.stringify({
-      libraries: [{ name: 'SD', version: '1.2.4', author: 'Arduino, SparkFun, Adafruit', sentence: 'Enables reading and writing on SD cards.' }],
+      libraries: [
+        {
+          name: 'SD',
+          latest: {
+            author: 'Arduino, SparkFun, Adafruit',
+            version: '1.2.4',
+            maintainer: 'Arduino',
+            sentence: 'Enables reading and writing on SD cards.',
+          },
+        },
+      ],
     }),
     stderr: '',
   },
@@ -128,19 +148,12 @@ function getMockData(command: string, args: string[]) {
     if (simpleCommand === 'core' && action === 'list') {
         return mockData['core list --format json'];
     }
-    if (simpleCommand === 'lib' && action === 'install') {
-        return mockData['lib install'];
+    if (simpleCommand === 'lib' && (action === 'install' || action ==='uninstall')) {
+      return mockData[`lib ${action}`];
     }
-    if (simpleCommand === 'lib' && action === 'uninstall') {
-        return mockData['lib uninstall'];
+     if (simpleCommand === 'core' && (action === 'install' || action === 'uninstall')) {
+      return mockData[`core ${action}`];
     }
-     if (simpleCommand === 'core' && action === 'install') {
-        return mockData['core install'];
-    }
-    if (simpleCommand === 'core' && action === 'uninstall') {
-        return mockData['core uninstall'];
-    }
-
 
     const mockKey = Object.keys(mockData).find(key => fullCommand.includes(key));
      if (mockKey) {
@@ -158,11 +171,11 @@ export async function executeCliCommand(command: string, args: string[] = []) {
   // Sanitize arguments to prevent command injection issues
   const sanitizedArgs = args.map(arg => {
     // More robust sanitization might be needed depending on the use case
-    if (/^[a-zA-Z0-9_.:/\\-]*$/.test(arg)) {
-      return arg;
+    // For arguments with spaces or special characters, wrap them in quotes if not already
+    if (/\s/.test(arg) && !/^".*"$/.test(arg) && !/^'.*'$/.test(arg)) {
+       return `"${arg.replace(/"/g, '\\"')}"`;
     }
-    // For arguments with spaces or special characters, wrap them in quotes
-    return `"${arg.replace(/"/g, '\\"')}"`;
+    return arg;
   }).join(' ');
   
   const commandWithArgs = `arduino-cli ${command} ${sanitizedArgs}`;
