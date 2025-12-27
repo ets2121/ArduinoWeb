@@ -37,7 +37,6 @@ const mockData: Record<string, any> = {
             version: '1.2.1',
             author: 'Arduino',
             maintainer: 'Arduino',
-            sentence: "Allows Arduino boards to control a variety of servo motors.",
           },
         },
         {
@@ -46,7 +45,6 @@ const mockData: Record<string, any> = {
             version: '1.2.4',
             author: 'Arduino, SparkFun, Adafruit',
             maintainer: 'Arduino',
-            sentence: "Enables reading and writing on SD cards.",
           },
         },
       ]
@@ -56,7 +54,7 @@ const mockData: Record<string, any> = {
   'core list --format json': {
     stdout: JSON.stringify({
       platforms: [
-        { id: 'arduino:avr', name: 'Arduino AVR Boards', installed_version: '1.8.6' },
+        { id: 'arduino:avr', name: 'Arduino AVR Boards', installed_version: '1.8.6', latest_version: '1.8.6' },
       ],
     }),
     stderr: '',
@@ -95,7 +93,7 @@ const mockData: Record<string, any> = {
   },
   'core search avr': {
     stdout: JSON.stringify({
-      cores: [{ id: 'arduino:avr', name: 'Arduino AVR Boards' }],
+      platforms: [{ id: 'arduino:avr', latest_version: '1.8.6', releases: {'1.8.6': {name: 'Arduino AVR Boards'}} }],
     }),
     stderr: '',
   },
@@ -132,15 +130,18 @@ function getMockData(command: string, args: string[]) {
 
     const simpleCommand = command;
     const action = args[0]; 
-    const query = args[1];
+    const query = args.length > 1 ? args.slice(1).find(a => !a.startsWith('--')) : undefined;
 
-    if (simpleCommand === 'lib' && action === 'search') {
+
+    if (simpleCommand === 'lib' && action === 'search' && query) {
         const mockKey = `lib search ${query}`;
         if(mockData[mockKey]) return mockData[mockKey];
-        return mockData['lib search servo']; // fallback
+        return { libraries: [] };
     }
-    if (simpleCommand === 'core' && action === 'search') {
-        return mockData['core search avr'];
+    if (simpleCommand === 'core' && action === 'search' && query) {
+        const mockKey = `core search ${query}`;
+        if(mockData[mockKey]) return mockData[mockKey];
+        return { platforms: [] };
     }
      if (simpleCommand === 'lib' && action === 'list') {
         return mockData['lib list --format json'];

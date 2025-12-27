@@ -18,24 +18,32 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
-interface Core {
+interface SearchedPlatform {
   id: string;
-  name: string;
-  version: string;
-  latest: string;
+  name?: string;
+  releases: {
+    [version: string]: {
+      name: string;
+    };
+  };
+  latest_version: string;
 }
+
+interface CoreSearchResult {
+  platforms: SearchedPlatform[];
+}
+
 
 interface InstalledPlatform {
   id: string;
   installed_version: string;
   latest_version: string;
-  name?: string; // name might not always be present at the top level
+  name?: string; 
 }
 
 
 interface InstalledCoreResponse {
   platforms: InstalledPlatform[];
-  result?: any; // Keep for backward compatibility if API is inconsistent
 }
 
 
@@ -43,7 +51,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   
-  const { data: searchResults, error: searchError, isLoading: isSearching } = useCli<{ cores: Core[] }>(
+  const { data: searchResults, error: searchError, isLoading: isSearching } = useCli<CoreSearchResult>(
     searchTerm ? ['core', 'search', searchTerm, '--format', 'json'] : null
   );
   
@@ -106,7 +114,8 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
     </div>
   );
 
-  const installedCores = installedData?.platforms || installedData?.result || [];
+  const installedCores = installedData?.platforms || [];
+  const searchedPlatforms = searchResults?.platforms || [];
 
   return (
     <Dialog>
@@ -142,18 +151,18 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                   <AlertDescription>{searchError.message}</AlertDescription>
                 </Alert>
               )}
-              {searchResults && searchResults.cores && (
+              {searchResults && (
                 <div className="p-2 space-y-2">
-                  {searchResults.cores.map((core, index) => (
+                  {searchedPlatforms.map((platform, index) => (
                     <div key={index} className="p-3 rounded-md hover:bg-accent mx-4">
                       <div className="flex justify-between">
                         <div>
-                          <p className="font-medium">{core.name}</p>
+                          <p className="font-medium">{platform.releases[platform.latest_version]?.name || platform.id}</p>
                           <p className="text-sm text-muted-foreground">
-                            ID: {core.id}
+                            ID: {platform.id}
                           </p>
                         </div>
-                        <Button size="sm" variant="secondary" onClick={() => handleInstall(core.id)}>
+                        <Button size="sm" variant="secondary" onClick={() => handleInstall(platform.id)}>
                           Install
                         </Button>
                       </div>
@@ -161,7 +170,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                   ))}
                 </div>
               )}
-               {searchResults && searchResults.cores?.length === 0 && (
+               {searchResults && searchedPlatforms.length === 0 && (
                 <div className="text-center p-8 text-muted-foreground">No cores found.</div>
               )}
             </ScrollArea>
