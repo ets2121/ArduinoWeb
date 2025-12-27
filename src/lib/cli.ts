@@ -29,16 +29,28 @@ const mockData: Record<string, any> = {
     stderr: '',
   },
   'lib list --format json': {
-    stdout: JSON.stringify([
-      {
-        library: {
-          name: 'Servo',
-          version: '1.2.1',
-          author: 'Arduino',
-          maintainer: 'Arduino',
+    stdout: JSON.stringify({
+      installed_libraries: [
+        {
+          library: {
+            name: 'Servo',
+            version: '1.2.1',
+            author: 'Arduino',
+            maintainer: 'Arduino',
+            sentence: "Allows Arduino boards to control a variety of servo motors.",
+          },
         },
-      },
-    ]),
+        {
+          library: {
+            name: 'SD',
+            version: '1.2.4',
+            author: 'Arduino, SparkFun, Adafruit',
+            maintainer: 'Arduino',
+            sentence: "Enables reading and writing on SD cards.",
+          },
+        },
+      ]
+    }),
     stderr: '',
   },
   'core list --format json': {
@@ -51,7 +63,13 @@ const mockData: Record<string, any> = {
   },
   'lib search servo': {
     stdout: JSON.stringify({
-      libraries: [{ name: 'Servo', version: '1.2.1', author: 'Arduino' }],
+      libraries: [{ name: 'Servo', version: '1.2.1', author: 'Arduino', sentence: 'Allows Arduino boards to control a variety of servo motors.' }],
+    }),
+    stderr: '',
+  },
+   'lib search sd': {
+    stdout: JSON.stringify({
+      libraries: [{ name: 'SD', version: '1.2.4', author: 'Arduino, SparkFun, Adafruit', sentence: 'Enables reading and writing on SD cards.' }],
     }),
     stderr: '',
   },
@@ -92,31 +110,34 @@ function getMockData(command: string, args: string[]) {
     const fullCommand = `${command} ${args.join(' ')}`;
     console.log(`[MOCK] Searching for command: ${fullCommand}`);
 
-    const simpleCommand = command.split(' ')[0]; // e.g., 'lib', 'core'
-    const action = command.split(' ')[1]; // e.g., 'search', 'install'
+    const simpleCommand = command;
+    const action = args[0]; 
+    const query = args[1];
 
-    if (command === 'lib' && action === 'search') {
-        return mockData['lib search servo'];
+    if (simpleCommand === 'lib' && action === 'search') {
+        const mockKey = `lib search ${query}`;
+        if(mockData[mockKey]) return mockData[mockKey];
+        return mockData['lib search servo']; // fallback
     }
-    if (command === 'core' && action === 'search') {
+    if (simpleCommand === 'core' && action === 'search') {
         return mockData['core search avr'];
     }
-     if (command === 'lib' && action === 'list') {
+     if (simpleCommand === 'lib' && action === 'list') {
         return mockData['lib list --format json'];
     }
-    if (command === 'core' && action === 'list') {
+    if (simpleCommand === 'core' && action === 'list') {
         return mockData['core list --format json'];
     }
-    if (command === 'lib' && action === 'install') {
+    if (simpleCommand === 'lib' && action === 'install') {
         return mockData['lib install'];
     }
-    if (command === 'lib' && action === 'uninstall') {
+    if (simpleCommand === 'lib' && action === 'uninstall') {
         return mockData['lib uninstall'];
     }
-     if (command === 'core' && action === 'install') {
+     if (simpleCommand === 'core' && action === 'install') {
         return mockData['core install'];
     }
-    if (command === 'core' && action === 'uninstall') {
+    if (simpleCommand === 'core' && action === 'uninstall') {
         return mockData['core uninstall'];
     }
 
@@ -134,7 +155,17 @@ export async function executeCliCommand(command: string, args: string[] = []) {
     return getMockData(command, args);
   }
 
-  const commandWithArgs = `arduino-cli ${command} ${args.join(' ')}`;
+  // Sanitize arguments to prevent command injection issues
+  const sanitizedArgs = args.map(arg => {
+    // More robust sanitization might be needed depending on the use case
+    if (/^[a-zA-Z0-9_.:/\\-]*$/.test(arg)) {
+      return arg;
+    }
+    // For arguments with spaces or special characters, wrap them in quotes
+    return `"${arg.replace(/"/g, '\\"')}"`;
+  }).join(' ');
+  
+  const commandWithArgs = `arduino-cli ${command} ${sanitizedArgs}`;
 
   try {
     console.log(`[LOCAL] Executing command: ${commandWithArgs}`);

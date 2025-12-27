@@ -24,11 +24,17 @@ interface Library {
   author: string;
   description?: string;
   maintainer: string;
+  sentence?: string;
 }
 
 interface InstalledLibrary {
   library: Library;
 }
+
+interface InstalledLibrariesResponse {
+    installed_libraries: InstalledLibrary[];
+}
+
 
 export function LibraryManagerDialog({
   children,
@@ -42,7 +48,7 @@ export function LibraryManagerDialog({
     searchTerm ? ['lib', 'search', searchTerm, '--format', 'json'] : null
   );
 
-  const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledLibrary[]>(
+  const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledLibrariesResponse>(
     ['lib', 'list', '--format', 'json'],
     { revalidateOnFocus: true }
   );
@@ -138,7 +144,7 @@ export function LibraryManagerDialog({
                         <div>
                           <p className="font-medium">{lib.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            {lib.description || `By ${lib.author}`}
+                            {lib.sentence || lib.description || `By ${lib.author}`}
                           </p>
                         </div>
                         <Button
@@ -171,9 +177,9 @@ export function LibraryManagerDialog({
                   <AlertDescription>{installedError.message}</AlertDescription>
                 </Alert>
               )}
-              {installedData && (
+              {installedData && installedData.installed_libraries && (
                 <div className="divide-y divide-border">
-                  {installedData.map((item, index) => (
+                  {installedData.installed_libraries.map((item, index) => (
                     <div key={index} className="p-3 hover:bg-accent mx-4">
                       <div className="flex justify-between items-start">
                         <div>
@@ -198,7 +204,7 @@ export function LibraryManagerDialog({
                   ))}
                 </div>
               )}
-              {installedData && installedData.length === 0 && (
+              {installedData && installedData.installed_libraries?.length === 0 && (
                  <div className="text-center p-8 text-muted-foreground">No libraries installed.</div>
               )}
             </ScrollArea>
