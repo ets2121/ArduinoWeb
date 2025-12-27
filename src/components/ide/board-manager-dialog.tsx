@@ -25,17 +25,17 @@ interface Core {
   latest: string;
 }
 
-interface InstalledCore {
-  ID: string;
-  Version: string;
-  Name: string;
-  id: string; // The API returns both 'ID' and 'id', 'id' is what we need for uninstall
-  name: string;
-  version: string;
+interface InstalledPlatform {
+  id: string;
+  installed_version: string;
+  latest_version: string;
+  name?: string; // name might not always be present at the top level
 }
 
+
 interface InstalledCoreResponse {
-  result: InstalledCore[];
+  platforms: InstalledPlatform[];
+  result?: any; // Keep for backward compatibility if API is inconsistent
 }
 
 
@@ -58,8 +58,12 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
       const response = await fetch(`/api/cli/core/install/${coreId}`);
       const result = await response.text();
        if (!response.ok) {
-        const errorData = JSON.parse(result);
-        throw new Error(errorData.error || 'Installation failed');
+        try {
+          const errorData = JSON.parse(result);
+          throw new Error(errorData.error || 'Installation failed');
+        } catch(e) {
+          throw new Error(result || 'Installation failed');
+        }
       }
       toast({ title: 'Installation Complete', description: result });
       refreshInstalled();
@@ -74,8 +78,12 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
       const response = await fetch(`/api/cli/core/uninstall/${coreId}`);
       const result = await response.text();
        if (!response.ok) {
-        const errorData = JSON.parse(result);
-        throw new Error(errorData.error || 'Removal failed');
+        try {
+          const errorData = JSON.parse(result);
+          throw new Error(errorData.error || 'Removal failed');
+        } catch(e) {
+          throw new Error(result || 'Removal failed');
+        }
       }
       toast({ title: 'Removal Complete', description: result });
       refreshInstalled();
@@ -97,6 +105,8 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
       ))}
     </div>
   );
+
+  const installedCores = installedData?.platforms || installedData?.result || [];
 
   return (
     <Dialog>
@@ -165,15 +175,15 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                   <AlertDescription>{installedError.message}</AlertDescription>
                 </Alert>
               )}
-              {installedData && installedData.result && (
+              {installedData && (
                 <div className="p-6 pt-2">
-                  {installedData.result.map((core, index) => (
+                  {installedCores.map((core, index) => (
                     <div key={index} className="p-3 rounded-md hover:bg-accent">
                       <div className="flex justify-between">
                         <div>
-                          <p className="font-medium">{core.name}</p>
+                          <p className="font-medium">{core.name || core.id}</p>
                           <p className="text-sm text-muted-foreground">
-                            Version {core.version}
+                            Version {core.installed_version}
                           </p>
                         </div>
                          <Button size="sm" variant="outline" onClick={() => handleRemove(core.id)}>
@@ -184,7 +194,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                   ))}
                 </div>
               )}
-              {installedData && installedData.result?.length === 0 && (
+              {installedData && installedCores.length === 0 && (
                 <div className="text-center p-8 text-muted-foreground">No cores installed.</div>
               )}
             </ScrollArea>

@@ -55,8 +55,8 @@ const mockData: Record<string, any> = {
   },
   'core list --format json': {
     stdout: JSON.stringify({
-      result: [
-        { name: 'Arduino AVR Boards', id: 'arduino:avr', version: '1.8.6' },
+      platforms: [
+        { id: 'arduino:avr', name: 'Arduino AVR Boards', installed_version: '1.8.6' },
       ],
     }),
     stderr: '',
@@ -170,6 +170,7 @@ export async function executeCliCommand(command: string, args: string[] = []) {
 
   // Sanitize arguments to prevent command injection issues
   const sanitizedArgs = args.map(arg => {
+    if (!arg) return '';
     // More robust sanitization might be needed depending on the use case
     // For arguments with spaces or special characters, wrap them in quotes if not already
     if (/\s/.test(arg) && !/^".*"$/.test(arg) && !/^'.*'$/.test(arg)) {
