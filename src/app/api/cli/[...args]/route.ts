@@ -9,12 +9,11 @@ const ALLOWED_COMMANDS: Record<string, string[]> = {
   upload: [],
 };
 
-
 export async function GET(
   request: Request,
-  context: { params: { args?: string[] } }
+  context: { params: Promise<{ args?: string[] }> }
 ) {
-  const { args = [] } = context.params;
+  const { args = [] } = await context.params;
 
   if (args.length === 0) {
     return NextResponse.json({ error: 'No command provided' }, { status: 400 });
@@ -45,11 +44,10 @@ export async function GET(
 
   const { searchParams } = new URL(request.url);
 
-  const commandArgs: string[] = [];
-  args.slice(1).forEach(arg => commandArgs.push(arg));
+  const commandArgs = [...args.slice(1)];
 
   searchParams.forEach((value, key) => {
-    if (value === 'true' || value === '') {
+    if (value === 'true') {
       commandArgs.push(`--${key}`);
     } else {
       commandArgs.push(`--${key}`, value);
@@ -75,5 +73,4 @@ export async function GET(
     }
     return new Response(stdout, { headers });
   }
-  
 }
