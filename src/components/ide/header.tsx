@@ -8,9 +8,27 @@ import { useSidebar } from '../ui/sidebar';
 import { SidebarTrigger } from '../ui/sidebar';
 import { LibraryManagerDialog } from './library-manager-dialog';
 import { BoardManagerDialog } from './board-manager-dialog';
+import { useCli } from '@/hooks/use-cli';
+
+interface Port {
+  address: string;
+  label: string;
+  protocol: string;
+  protocol_label: string;
+  properties?: Record<string, string>;
+}
+
+interface DetectedPort {
+  port: Port;
+}
+
+interface BoardListResponse {
+  detected_ports: DetectedPort[];
+}
 
 export function IdeHeader() {
-  const { open, toggleSidebar } = useSidebar();
+  const { open } = useSidebar();
+  const { data: boardData, error: boardError } = useCli<BoardListResponse>(['board', 'list', '--format', 'json']);
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-2 md:px-4 shrink-0">
@@ -30,14 +48,22 @@ export function IdeHeader() {
             <span className="sr-only">Upload</span>
           </Button>
         </div>
-        <Select defaultValue="uno">
+        <Select>
           <SelectTrigger className="w-32 md:w-48 h-9 bg-background">
-            <SelectValue placeholder="Select a board" />
+            <SelectValue placeholder="Select a board/port" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="uno">Arduino Uno</SelectItem>
-            <SelectItem value="nano">Arduino Nano</SelectItem>
-            <SelectItem value="mega">Arduino Mega</SelectItem>
+            {boardError && <SelectItem value="error" disabled>{boardError.message}</SelectItem>}
+            {!boardData && !boardError && <SelectItem value="loading" disabled>Loading boards...</SelectItem>}
+            {boardData?.detected_ports && boardData.detected_ports.length > 0 ? (
+                boardData.detected_ports.map(({ port }) => (
+                    <SelectItem key={port.address} value={port.address}>
+                    {port.label}
+                    </SelectItem>
+                ))
+            ) : (
+                <SelectItem value="none" disabled>No boards found</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>

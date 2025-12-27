@@ -9,23 +9,27 @@ const isLocal = process.env.IS_LOCAL === 'true';
 
 // Mock data for development environment
 const mockData: Record<string, any> = {
-  'board list': {
-    stdout: JSON.stringify([
-      {
-        port: {
-          address: 'COM3',
-          protocol: 'serial',
-          protocol_label: 'Serial Port',
-          label: 'COM3',
+  'board list --format json': {
+    stdout: JSON.stringify({
+      "detected_ports": [
+        {
+          "port": {
+            "address": "COM3",
+            "label": "COM3",
+            "protocol": "serial",
+            "protocol_label": "Serial Port (COM3)"
+          }
         },
-        matching_boards: [
-          {
-            name: 'Arduino Uno',
-            fqbn: 'arduino:avr:uno',
-          },
-        ],
-      },
-    ]),
+        {
+          "port": {
+            "address": "/dev/ttyACM0",
+            "label": "/dev/ttyACM0",
+            "protocol": "serial",
+            "protocol_label": "Serial Port (ACM0)"
+          }
+        }
+      ]
+    }),
     stderr: '',
   },
   'lib list --format json': {
@@ -59,7 +63,7 @@ const mockData: Record<string, any> = {
     }),
     stderr: '',
   },
-  'lib search servo': {
+  'lib search servo --format json': {
     stdout: JSON.stringify({
       libraries: [
         {
@@ -75,7 +79,7 @@ const mockData: Record<string, any> = {
     }),
     stderr: '',
   },
-   'lib search sd': {
+   'lib search sd --format json': {
     stdout: JSON.stringify({
       libraries: [
         {
@@ -91,9 +95,9 @@ const mockData: Record<string, any> = {
     }),
     stderr: '',
   },
-  'core search avr': {
+  'core search avr --format json': {
     stdout: JSON.stringify({
-      platforms: [{ id: 'arduino:avr', latest_version: '1.8.6', releases: {'1.8.6': {name: 'Arduino AVR Boards'}} }],
+      platforms: [{ id: 'arduino:avr', name: 'Arduino AVR Boards', latest_version: '1.8.6', releases: {'1.8.6': {name: 'Arduino AVR Boards'}} }],
     }),
     stderr: '',
   },
@@ -127,41 +131,27 @@ Global variables use 9 bytes (0%) of dynamic memory, leaving 2039 bytes for loca
 function getMockData(command: string, args: string[]) {
     const fullCommand = `${command} ${args.join(' ')}`;
     console.log(`[MOCK] Searching for command: ${fullCommand}`);
+    
+    // Prioritize exact matches
+    if(mockData[fullCommand]) return mockData[fullCommand];
 
     const simpleCommand = command;
     const action = args[0]; 
-    const query = args.length > 1 ? args.slice(1).find(a => !a.startsWith('--')) : undefined;
+    const format = args.includes('--format') && args.includes('json') ? '--format json' : '';
+    const query = args.find(a => !a.startsWith('--') && a !== command && a !== action);
 
-
-    if (simpleCommand === 'lib' && action === 'search' && query) {
-        const mockKey = `lib search ${query}`;
-        if(mockData[mockKey]) return mockData[mockKey];
-        return { libraries: [] };
-    }
-    if (simpleCommand === 'core' && action === 'search' && query) {
-        const mockKey = `core search ${query}`;
-        if(mockData[mockKey]) return mockData[mockKey];
-        return { platforms: [] };
-    }
-     if (simpleCommand === 'lib' && action === 'list') {
-        return mockData['lib list --format json'];
-    }
-    if (simpleCommand === 'core' && action === 'list') {
-        return mockData['core list --format json'];
-    }
-    if (simpleCommand === 'lib' && (action === 'install' || action ==='uninstall')) {
+    let mockKey = `${simpleCommand} ${action}${query ? ` ${query}`: ''}${format ? ` ${format}`:''}`.trim();
+    if(mockData[mockKey]) return mockData[mockKey];
+    
+    // Fallback for install/uninstall
+    if(simpleCommand === 'lib' && (action === 'install' || action ==='uninstall')) {
       return mockData[`lib ${action}`];
     }
-     if (simpleCommand === 'core' && (action === 'install' || action === 'uninstall')) {
+     if(simpleCommand === 'core' && (action === 'install' || action === 'uninstall')) {
       return mockData[`core ${action}`];
     }
-
-    const mockKey = Object.keys(mockData).find(key => fullCommand.includes(key));
-     if (mockKey) {
-        return mockData[mockKey];
-    }
     
-    return { stdout: `No mock data for "${fullCommand}"`, stderr: '' };
+    return { stdout: `{"message": "No mock data for '${fullCommand}'"}`, stderr: '' };
 }
 
 export async function executeCliCommand(command: string, args: string[] = []) {
@@ -169,11 +159,8 @@ export async function executeCliCommand(command: string, args: string[] = []) {
     return getMockData(command, args);
   }
 
-  // Sanitize arguments to prevent command injection issues
   const sanitizedArgs = args.map(arg => {
     if (!arg) return '';
-    // More robust sanitization might be needed depending on the use case
-    // For arguments with spaces or special characters, wrap them in quotes if not already
     if (/\s/.test(arg) && !/^".*"$/.test(arg) && !/^'.*'$/.test(arg)) {
        return `"${arg.replace(/"/g, '\\"')}"`;
     }
@@ -187,7 +174,6 @@ export async function executeCliCommand(command: string, args: string[] = []) {
     const { stdout, stderr } = await execAsync(commandWithArgs);
     return { stdout, stderr };
   } catch (error: any) {
-    // The error object from execAsync often has stdout and stderr properties
     return { stdout: error.stdout || '', stderr: error.stderr || error.message };
   }
 }
