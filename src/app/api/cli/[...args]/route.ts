@@ -18,7 +18,7 @@ export async function GET(
     return NextResponse.json({ error: 'No command provided' }, { status: 400 });
   }
 
-  const [command, subCommand] = params.args;
+  const [command, subCommand, ...pathRest] = params.args;
 
   // Validate the command against the whitelist
   if (!ALLOWED_COMMANDS.hasOwnProperty(command)) {
@@ -35,27 +35,35 @@ export async function GET(
      }
   }
 
+  const pathArgs = params.args.slice(1);
 
   const { searchParams } = new URL(request.url);
   const queryArgs = Array.from(searchParams.entries()).flatMap(([key, value]) => {
-    return value ? [`--${key}`, value] : [`--${key}`];
+    if (value === 'true') {
+        return [`--${key}`];
+    }
+    return [`--${key}`, value];
   });
 
-  const allArgs = [...params.args.slice(1), ...queryArgs];
+  const allArgs = [...pathArgs, ...queryArgs];
 
   const { stdout, stderr } = await executeCliCommand(command, allArgs);
 
   if (stderr && !stdout) {
     return NextResponse.json({ error: stderr }, { status: 500 });
   }
-
+    
+  // The cli can return valid json but still have warnings in stderr
+  // so we try to parse json and attach warnings if they exist.
   try {
     const jsonOutput = JSON.parse(stdout);
     return NextResponse.json(stderr ? { ...jsonOutput, warnings: stderr } : jsonOutput);
   } catch (e) {
+    // If stdout is not json, return it as plain text.
     const headers = new Headers();
     headers.set('Content-Type', 'text/plain');
     if (stderr) {
+      // Encode warnings in a header to be optionally used by the client.
       headers.set('X-Command-Warnings', Buffer.from(stderr).toString('base64'));
     }
     return new Response(stdout, { headers });

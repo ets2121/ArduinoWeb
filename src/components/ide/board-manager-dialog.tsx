@@ -49,11 +49,11 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: searchResults, error: searchError, isLoading: isSearching } = useCli<CoreSearchResult>(
-    searchTerm ? ['core', 'search', searchTerm, 'format=json'] : null
+    searchTerm ? ['core', 'search', searchTerm, '--json'] : null
   );
 
   const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledCoreResponse>(
-    ['core', 'list', 'format=json'],
+    ['core', 'list', '--json'],
     { revalidateOnFocus: true }
   );
 
@@ -154,7 +154,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                     <div key={index} className="p-3 rounded-md hover:bg-accent mx-4">
                       <div className="flex justify-between">
                         <div>
-                          <p className="font-medium">{platform.releases[platform.latest_version]?.name || platform.id}</p>
+                          <p className="font-medium">{platform.name || platform.id}</p>
                           <p className="text-sm text-muted-foreground">
                             ID: {platform.id}
                           </p>
@@ -167,7 +167,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                   ))}
                 </div>
               )}
-              {searchResults && searchedPlatforms.length === 0 && (
+              {searchResults && searchedPlatforms.length === 0 && !isSearching && (
                 <div className="text-center p-8 text-muted-foreground">No cores found.</div>
               )}
             </ScrollArea>
@@ -200,7 +200,7 @@ export function BoardManagerDialog({ children }: { children: React.ReactNode }) 
                   ))}
                 </div>
               )}
-              {installedData && installedCores.length === 0 && (
+              {installedData && installedCores.length === 0 && !isLoadingInstalled &&(
                 <div className="text-center p-8 text-muted-foreground">No cores installed.</div>
               )}
             </ScrollArea>

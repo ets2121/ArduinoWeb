@@ -59,11 +59,11 @@ export function LibraryManagerDialog({
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: searchData, error: searchError, isLoading: isSearching } = useCli<LibrarySearchResult>(
-    searchTerm ? ['lib', 'search', searchTerm, 'format=json'] : null
+    searchTerm ? ['lib', 'search', searchTerm, '--json'] : null
   );
 
   const { data: installedData, error: installedError, isLoading: isLoadingInstalled, mutate: refreshInstalled } = useCli<InstalledLibrariesResponse>(
-    ['lib', 'list', 'format=json'],
+    ['lib', 'list', '--json'],
     { revalidateOnFocus: true }
   );
 
@@ -74,14 +74,16 @@ export function LibraryManagerDialog({
       const result = await response.text();
       if (!response.ok) {
         try {
+          // Try to parse error from JSON response
           const errorData = JSON.parse(result);
           throw new Error(errorData.error || 'Installation failed');
         } catch (e) {
+          // Fallback to text response
           throw new Error(result || 'Installation failed');
         }
       }
       toast({ title: 'Installation Complete', description: result });
-      refreshInstalled();
+      refreshInstalled(); // Refresh the list of installed libraries
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
@@ -89,7 +91,7 @@ export function LibraryManagerDialog({
 
   const handleRemove = async (libName: string) => {
     toast({ title: `Removing ${libName}...` });
-    try {
+     try {
       const response = await fetch(`/api/cli/lib/uninstall/${libName}`);
       const result = await response.text();
       if (!response.ok) {
@@ -106,6 +108,7 @@ export function LibraryManagerDialog({
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   };
+
 
   const renderSkeletons = () => (
     <div className="divide-y divide-border p-4">
@@ -188,7 +191,7 @@ export function LibraryManagerDialog({
                   ))}
                 </div>
               )}
-              {searchData && searchedLibraries.length === 0 && (
+               {searchData && searchedLibraries.length === 0 && !isSearching &&(
                 <div className="text-center p-8 text-muted-foreground">No libraries found.</div>
               )}
             </ScrollArea>
@@ -196,7 +199,7 @@ export function LibraryManagerDialog({
           <TabsContent value="installed" className="flex-1 mt-0 overflow-hidden">
             <ScrollArea className="h-full">
               {isLoadingInstalled && renderSkeletons()}
-              {installedError && (
+               {installedError && (
                 <Alert variant="destructive" className="m-4">
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{installedError.message}</AlertDescription>
@@ -217,7 +220,7 @@ export function LibraryManagerDialog({
                           size="sm"
                           variant="outline"
                           className="ml-4 shrink-0"
-                          onClick={() => handleRemove(item.library.name)}
+                           onClick={() => handleRemove(item.library.name)}
                         >
                           Remove
                         </Button>
@@ -229,7 +232,7 @@ export function LibraryManagerDialog({
                   ))}
                 </div>
               )}
-              {installedData && installedLibraries.length === 0 && (
+              {installedData && installedLibraries.length === 0 && !isLoadingInstalled && (
                 <div className="text-center p-8 text-muted-foreground">No libraries installed.</div>
               )}
             </ScrollArea>

@@ -28,7 +28,7 @@ interface BoardListResponse {
 
 export function IdeHeader() {
   const { open } = useSidebar();
-  const { data: boardData, error: boardError } = useCli<BoardListResponse>(['board', 'list', '--format', 'json']);
+  const { data: boardData, error: boardError } = useCli<BoardListResponse>(['board', 'list', '--json']);
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-2 md:px-4 shrink-0">
