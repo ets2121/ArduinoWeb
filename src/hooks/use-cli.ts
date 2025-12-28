@@ -38,26 +38,18 @@ export function useCli<T>(
 
     validArgs.forEach(arg => {
       if (arg.startsWith('--')) {
-        queryParts.push(arg.substring(2)); // remove --
-      } else if (arg.includes('=')) {
-         queryParts.push(arg);
-      }
-      else {
+        const [key, ...valueParts] = arg.substring(2).split('=');
+        const value = valueParts.join('=');
+        queryParts.push(`${key}=${value || 'true'}`);
+      } else {
         pathParts.push(arg);
       }
     });
     
     let url = `/api/cli/${pathParts.join('/')}`;
     
-    const queryParams = new URLSearchParams();
-    queryParts.forEach(part => {
-        const [key, ...valueParts] = part.split('=');
-        const value = valueParts.join('=');
-        queryParams.append(key, value || 'true');
-    });
-
-    if (queryParams.toString()) {
-      url += `?${queryParams.toString()}`;
+    if (queryParts.length > 0) {
+      url += `?${queryParts.join('&')}`;
     }
 
     return url;
