@@ -1,9 +1,6 @@
 'use server';
 
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { spawn } from 'child_process';
 
 const isLocal = process.env.IS_LOCAL === 'true';
 
@@ -151,21 +148,52 @@ function getMockData(command: string, args: string[]) {
     const searchKey = `${simpleCommand} ${action} ${args.find(a => !a.startsWith('--') && a !== action)} --json`.trim();
     if(mockData[searchKey]) return mockData[searchKey];
     
+    // Dynamic search mock
+    if (command === 'lib' && action === 'search') {
+      return { stdout: JSON.stringify({ "libraries": [] }), stderr: '' };
+    }
+    if (command === 'core' && action === 'search') {
+      return { stdout: JSON.stringify({ "platforms": [] }), stderr: '' };
+    }
+    
     return { stdout: `{"message": "No mock data for '${commandAndArgs}'"}`, stderr: '' };
 }
 
-export async function executeCliCommand(command: string, args: string[] = []) {
+export async function executeCliCommand(command: string, args: string[] = []): Promise<{ stdout: string; stderr: string }> {
   if (!isLocal) {
     return getMockData(command, args);
   }
 
-  const commandWithArgs = `arduino-cli ${command} ${args.join(' ')}`;
-
-  try {
+  return new Promise((resolve, reject) => {
+    const commandWithArgs = `arduino-cli ${command} ${args.join(' ')}`;
     console.log(`[LOCAL] Executing command: ${commandWithArgs}`);
-    const { stdout, stderr } = await execAsync(commandWithArgs);
-    return { stdout, stderr };
-  } catch (error: any) {
-    return { stdout: error.stdout || '', stderr: error.stderr || error.message };
-  }
+    
+    const child = spawn('arduino-cli', [command, ...args]);
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        // Even on non-zero exit code, stdout might have useful info (e.g. warnings)
+        // The calling function will decide if stderr constitutes a full error.
+        resolve({ stdout, stderr: stderr || `Process exited with code ${code}` });
+      }
+    });
+
+    child.on('error', (err) => {
+      // This is for errors in spawning the process itself
+      reject({ stdout: '', stderr: err.message });
+    });
+  });
 }
