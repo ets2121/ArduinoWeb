@@ -1,7 +1,9 @@
 'use server';
 
 import { spawn } from 'child_process';
-import { getSketchbookPath } from './sketchbook';
+import 
+import { projectTraceSource } from 'next/dist/build/swc/generated-native';
+import { trackSynchronousPlatformIOAccessInDev } from 'next/dist/server/app-render/dynamic-rendering';
 
 const isLocal = process.env.IS_LOCAL === 'true';
 
@@ -168,7 +170,8 @@ function getMockData(command: string, args: string[]) {
 }
 
 export async function executeCliCommand(command: string, args: string[] = []): Promise<{ stdout: string; stderr: string }> {
-  const sketchbookPath = getSketchbookPath();
+  const sketchbookPath = process.env.ARDUINO_SKETCHBOOK_PATH || '';
+
 
   // Special handling for 'sketch new' command to prepend sketchbook path
   if (command === 'sketch' && args[0] === 'new' && args.length > 1) {
