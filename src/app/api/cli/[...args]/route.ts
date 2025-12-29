@@ -6,6 +6,7 @@ const ALLOWED_COMMANDS: Record<string, string[]> = {
   core: ['list', 'search', 'install', 'uninstall', 'update-index'],
   lib: ['list', 'search', 'install', 'uninstall', 'update-index'],
   compile: [],
+  sketch: ['new'],
   upload: [],
 };
 
