@@ -1,6 +1,7 @@
 'use server';
 
 import { spawn } from 'child_process';
+import { getSketchbookPath } from './sketchbook';
 
 const isLocal = process.env.IS_LOCAL === 'true';
 
@@ -123,6 +124,10 @@ Global variables use 9 bytes (0%) of dynamic memory, leaving 2039 bytes for loca
     stdout: 'Core uninstalled successfully',
     stderr: '',
   },
+  'sketch new': {
+    stdout: 'Sketch created successfully',
+    stderr: '',
+  },
 };
 
 function getMockData(command: string, args: string[]) {
@@ -137,12 +142,15 @@ function getMockData(command: string, args: string[]) {
 
     let mockKey = `${simpleCommand}${action ? ' ' + action : ''}`;
     
-    // Fallback for install/uninstall
+    // Fallback for install/uninstall/new
     if (simpleCommand === 'lib' && (action === 'install' || action === 'uninstall')) {
       return mockData[`lib ${action}`];
     }
     if (simpleCommand === 'core' && (action === 'install' || action === 'uninstall')) {
       return mockData[`core ${action}`];
+    }
+     if (simpleCommand === 'sketch' && action === 'new') {
+      return mockData['sketch new'];
     }
     
     const searchKey = `${simpleCommand} ${action} ${args.find(a => !a.startsWith('--') && a !== action)} --json`.trim();
@@ -160,6 +168,14 @@ function getMockData(command: string, args: string[]) {
 }
 
 export async function executeCliCommand(command: string, args: string[] = []): Promise<{ stdout: string; stderr: string }> {
+  const sketchbookPath = getSketchbookPath();
+
+  // Special handling for 'sketch new' command to prepend sketchbook path
+  if (command === 'sketch' && args[0] === 'new' && args.length > 1) {
+    const sketchName = args[1];
+    args[1] = `${sketchbookPath}/${sketchName}`;
+  }
+
   if (!isLocal) {
     return getMockData(command, args);
   }
@@ -182,12 +198,12 @@ export async function executeCliCommand(command: string, args: string[] = []): P
     });
 
     child.on('close', (code) => {
-      if (code === 0) {
-        resolve({ stdout, stderr });
+      if (stderr && !stdout) {
+        // If there's only stderr, treat it as an error.
+        resolve({ stdout: '', stderr: stderr || `Process exited with code ${code}` });
       } else {
-        // Even on non-zero exit code, stdout might have useful info (e.g. warnings)
-        // The calling function will decide if stderr constitutes a full error.
-        resolve({ stdout, stderr: stderr || `Process exited with code ${code}` });
+        // Otherwise, resolve with stdout and any potential warnings in stderr
+        resolve({ stdout, stderr });
       }
     });
 
